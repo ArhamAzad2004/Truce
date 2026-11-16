@@ -21,9 +21,9 @@
 </head>
 <body>
 <header>
-  <h1>Truce · 5 directions</h1>
+  <h1>Truce · 6 directions</h1>
   <nav aria-label="Design directions"></nav>
-  <span class="hint">Keys 1–5 switch · <a id="open" href="#" target="_blank">open alone ↗</a></span>
+  <span class="hint">Keys 1–6 switch · <a id="open" href="#" target="_blank">open alone ↗</a></span>
 </header>
 <iframe title="Mockup" id="view"></iframe>
 <script>
@@ -33,6 +33,7 @@
     ["03-house-lights", "03 House Lights"],
     ["04-kitchen-note", "04 Kitchen Note"],
     ["05-signed-truce", "05 Signed Truce"],
+    ["06-night-ticket", "06 Night Ticket"],
   ];
   const nav = document.querySelector("nav"), view = document.getElementById("view"), open = document.getElementById("open");
   function show(i) {
@@ -47,8 +48,8 @@
     b.onclick = () => show(i);
     nav.append(b);
   });
-  addEventListener("keydown", e => { const n = +e.key; if (n >= 1 && n <= 5) show(n - 1); });
-  show(Math.min(Math.max((+location.hash.slice(1) || 1) - 1, 0), 4));
+  addEventListener("keydown", e => { const n = +e.key; if (n >= 1 && n <= 6) show(n - 1); });
+  show(Math.min(Math.max((+location.hash.slice(1) || 1) - 1, 0), 5));
 </script>
 </body>
 </html>

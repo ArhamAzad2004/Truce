@@ -507,3 +507,48 @@ Build all five so the owner can compare, but if one must lead, it is **01 Torn S
 - Runner-up: **05 Signed Truce**, the most ownable idea because it comes from the name, with the higher risk that the joke wears thin.
 
 Open points to check before any direction is made public: that each font family loads from Google Fonts with the stated weights, and that the invented titles ("Paper Lanterns", "The Quiet Orbit") do not match real films closely enough to matter.
+
+---
+
+## 06 Night Ticket (hybrid)
+
+**Concept:** 01's ticket, lit, in 03's dark auditorium. The house lights go down, the pick prints out of a slot, and a veto tears the stub. Folder `06-night-ticket`. Built after the owner's review of 01–05; it follows the shared rules in section 0.
+
+### Tokens
+| Token | Hex | Use |
+|---|---|---|
+| `--bg` | `#0F0D0B` | Warm-black room (03) |
+| `--text` | `#F2EBDD` | Text on the room |
+| `--muted` | `#A39B8C` | Secondary text on the room |
+| `--amber` | `#F5C04A` | The one light: primary button, text button, selected tick, house-light and projector gradients |
+| `--line` | `#6B6357` | Reserved for control borders on the room (none used in these three screens) |
+| `--danger` | `#FF7A66` | Error text on the room (not used in the mockup) |
+| `--stock` | `#F4ECD8` | Ticket card stock |
+| `--stock-lit` | `#FFF8E4` | Highlight where the light lands on the reveal ticket |
+| `--stock-dim` | `#E4D9BE` | Veto mini-tickets |
+| `--ink` | `#1C1611` | Text, control borders and selected fill on stock; text on amber |
+| `--ink-muted` | `#5A5046` | Secondary text on stock |
+| `--bronze` | `#7A5200` | Amber as ink: READY stamp, ON NETFLIX tag |
+| `--red` | `#B3261E` | Oxblood, veto only, on stock only |
+| `--perf` | `#A89B80` | Perforations and hairlines (decorative, 2.3:1) |
+
+Accent system: amber means light, selection and go; oxblood means veto and danger. Selection never relies on colour: selected = ink fill + amber tick + 600 weight.
+
+Contrast (WCAG 2.x, computed for these exact pairs): text on bg 16.4:1 · muted on bg 7.0:1 · muted on the brightest house light (amber at 18% over bg, `#382D16`) 4.9:1, text there 11.4:1 · amber on bg 11.6:1, on the 14% spill 8.9:1 · ink on amber (button) 10.7:1 · ink on stock 15.2:1, on stock-lit 16.9:1 · stock on ink (selected) 15.2:1 · amber tick on ink 10.7:1 · ink-muted on stock 6.7:1, on stock-dim 5.6:1 · ink on stock-dim 12.8:1 · bronze on stock 5.9:1, on stock-lit 6.5:1 · red on stock 5.6:1, on stock-lit 6.2:1 · danger on bg 7.6:1 · ticket edge (stock on bg) 16.5:1 · slot border `#8A8172` on bg 5.1:1. Never put `--red` or `--bronze` on the dark room.
+
+### Typography
+01's system, unchanged: **Alfa Slab One** 400 (Title 28/32) · **Work Sans** 400, 500, 600 (Body 16/24, Small 14/20) · **DM Mono** 500 (Label 12/16, uppercase, tracking 0.12em; room code 24/30). All three families were checked against the Google Fonts CSS endpoint and load in the browser. The slab holds up in warm white on black, so nothing was swapped for 03's serif.
+
+### Shape and light
+- Tickets, perforations, notches, serial number, wordmark lozenge and veto mini-tickets are 01's. The notches are now real cut-outs (CSS mask), so the dark room shows through them.
+- Light is two gradients on the room, never a halo on the card: a house-light spill from above the screen and a projector pool behind the ticket. The reveal ticket's header also brightens to `--stock-lit` where the light lands. Shadows are neutral black.
+- Lobby members sit in seat rows inside the ticket: a seat shape with the seat number printed on it (`A1`–`A3`), ink-filled when ready and dashed while deciding, plus 01's READY stamp.
+- Reasons stay ticket-style rows with a bold name lead-in. 03's caption plates were designed to sit over a poster; on light stock they would put black boxes on the one lit object and break it.
+
+### Motion
+House lights dim (spill opacity 1 to 0.4, 1200 ms ease-out), the projector pool fades up (900 ms from 500 ms), the ticket feeds from the slot (900 ms, `steps(16,end)`, from 900 ms), then the three reasons fade in (200 ms each, 120 ms stagger from 1900 ms). Veto (described, not animated): the stub tears off as in 01 and the house lights come up for that beat. Reduced motion: the dimmed room and the finished ticket are shown at once.
+
+### From 01 / from 03
+- **From 01:** ticket as the only container, perforations and notches, serial, wordmark lozenge, printer-slot reveal, tear-off veto stub with its oxblood edge, type system, layout of all three screens.
+- **From 03:** warm-black room, amber as the single light, top spill, lights-down moment, seats in the lobby, the line "The lights go down when you tap."
+- **Dropped:** 01's mint and green (bronze replaces green so there is one accent family), 01's label above the film title, 03's serif, caption plates and exit-sign orange.

@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Truce · 06 Night Ticket</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=DM+Mono:wght@400;500&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+h1,h2,p,ul{margin:0;padding:0}
+ul{list-style:none}
+
+/* ---------- Canvas ---------- */
+body{background:#DCDCD8;color:#2B2B28;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;padding:48px;overflow-x:auto}
+.canvas-head{margin-bottom:28px}
+.canvas-head .dir{font-size:20px;font-weight:600;line-height:28px}
+.canvas-head .one{font-size:14px;line-height:20px;margin-top:2px}
+.row{display:flex;gap:40px;min-width:1250px;align-items:flex-start}
+.cap{display:flex;align-items:center;justify-content:space-between;height:44px;margin-bottom:12px;font-size:13px;padding:0 4px}
+.cap a{color:#2B2B28;font-size:13px;display:inline-flex;align-items:center;min-height:44px;padding:0 4px;text-underline-offset:3px}
+.cap a:focus-visible{outline:2px solid #2B2B28;outline-offset:2px}
+
+/* ---------- Tokens ----------
+   Dark room (from 03): --bg, --text, --muted, --amber, --line.
+   Lit paper (from 01): --stock, --ink, --ink-muted, --red, --perf.
+   One accent system: amber = light, selection, go. Oxblood red = veto and danger, on stock only. */
+.phone{
+  --bg:#0F0D0B;--text:#F2EBDD;--muted:#A39B8C;--amber:#F5C04A;--line:#6B6357;--danger:#FF7A66;
+  --stock:#F4ECD8;--stock-lit:#FFF8E4;--stock-dim:#E4D9BE;--ink:#1C1611;--ink-muted:#5A5046;
+  --red:#B3261E;--bronze:#7A5200;--perf:#A89B80;
+  --shadow:0 18px 28px -18px rgba(0,0,0,.9);
+  width:390px;height:844px;overflow:hidden;border-radius:44px;outline:10px solid #1A1A18;
+  background:var(--bg);color:var(--text);
+  font-family:"Work Sans",system-ui,sans-serif;font-size:16px;line-height:24px;
+  -webkit-font-smoothing:antialiased;
+}
+.phone :focus-visible{outline:2px solid var(--text);outline-offset:2px}
+.ticket :focus-visible{outline-color:var(--ink)}
+.screen{height:100%;display:flex;flex-direction:column;padding:20px 16px 24px;position:relative;isolation:isolate}
+/* House light: one warm spill from above the screen. Decorative, sits under all content. */
+.screen::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(120% 55% at 50% -10%,rgba(245,192,74,.14),transparent 60%)}
+/* Projector pool: the light that falls on the ticket. A gradient on the room, not a halo on the card. */
+.screen::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(80% 48% at 50% 48%,rgba(245,192,74,.15),transparent 70%)}
+
+/* ---------- Type scale (01's system, unchanged) ---------- */
+.title{font-family:"Alfa Slab One",serif;font-weight:400;font-size:28px;line-height:32px;letter-spacing:.005em}
+.body{font-size:16px;line-height:24px}
+.small{font-size:14px;line-height:20px;font-weight:500}
+.muted{color:var(--muted)}
+.ticket .muted{color:var(--ink-muted)}
+.lbl{font-family:"DM Mono",ui-monospace,monospace;font-weight:500;font-size:12px;line-height:16px;letter-spacing:.12em;text-transform:uppercase}
+
+/* ---------- Top row + wordmark (a tiny lit ticket) ---------- */
+.top{display:flex;align-items:center;justify-content:space-between;height:30px;margin-bottom:22px}
+.mark{display:inline-block;height:30px;padding:0 16px;border-radius:4px;
+  font-family:"Alfa Slab One",serif;font-size:18px;line-height:30px;letter-spacing:.06em;color:var(--ink);
+  background:var(--stock);
+  -webkit-mask:radial-gradient(circle at 0 50%,transparent 5px,#000 5.5px),radial-gradient(circle at 100% 50%,transparent 5px,#000 5.5px);
+  -webkit-mask-composite:source-in;
+  mask:radial-gradient(circle at 0 50%,transparent 5px,#000 5.5px),radial-gradient(circle at 100% 50%,transparent 5px,#000 5.5px);
+  mask-composite:intersect}
+
+/* ---------- Ticket + perforations ----------
+   The ticket has no fill of its own: each .sec is stock, and the perforation rows are stock with real
+   notches cut by a mask, so the dark room (and its light) shows through them. */
+.ticket{border-radius:14px;box-shadow:var(--shadow);position:relative;overflow:hidden;color:var(--ink)}
+.sec{background:var(--stock)}
+.perf,.vperf{position:relative;flex:none;background:var(--stock);z-index:1}
+.perf{height:22px;margin:-1px 0;
+  -webkit-mask:radial-gradient(circle at 0 50%,transparent 10px,#000 10.5px),radial-gradient(circle at 100% 50%,transparent 10px,#000 10.5px);
+  -webkit-mask-composite:source-in;
+  mask:radial-gradient(circle at 0 50%,transparent 10px,#000 10.5px),radial-gradient(circle at 100% 50%,transparent 10px,#000 10.5px);
+  mask-composite:intersect}
+.perf::before{content:"";position:absolute;left:16px;right:16px;top:10px;border-top:2px dashed var(--perf)}
+.vperf{width:22px;margin:0 -1px;
+  -webkit-mask:radial-gradient(circle at 50% 0,transparent 10px,#000 10.5px),radial-gradient(circle at 50% 100%,transparent 10px,#000 10.5px);
+  -webkit-mask-composite:source-in;
+  mask:radial-gradient(circle at 50% 0,transparent 10px,#000 10.5px),radial-gradient(circle at 50% 100%,transparent 10px,#000 10.5px);
+  mask-composite:intersect}
+.vperf::before{content:"";position:absolute;top:16px;bottom:16px;left:10px;border-left:2px dashed var(--perf)}
+
+/* ---------- Controls ---------- */
+.tick{width:12px;height:12px;flex:none;display:none;color:var(--amber)}
+[aria-pressed="true"] .tick{display:block}
+.chips{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.chip{height:44px;border:1.5px solid var(--ink);border-radius:6px;display:flex;align-items:center;justify-content:center;gap:6px;
+  font-size:14px;line-height:20px;font-weight:500;padding:0 6px;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--stock);font-weight:600}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:8px;padding:3px;border:1.5px solid var(--ink);border-radius:6px}
+.seg button{position:relative;height:44px;border-radius:4px;display:flex;align-items:center;justify-content:center;gap:5px;
+  font-size:14px;line-height:20px;font-weight:500;padding:0 4px;white-space:nowrap}
+.seg button+button::before{content:"";position:absolute;left:-5px;top:12px;bottom:12px;width:1px;background:var(--perf)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--stock);font-weight:600}
+.seg button[aria-pressed="true"]::before,.seg button[aria-pressed="true"]+button::before{display:none}
+
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border-radius:6px;font-weight:600;font-size:16px;line-height:24px}
+.btn-primary{height:56px;background:var(--amber);color:var(--ink)}
+.btn-outline{height:44px;border:1.5px solid var(--ink);font-size:14px;line-height:20px}
+.textbtn{display:inline-flex;align-items:center;min-height:44px;padding:0 8px;margin-right:-8px;font-weight:600;color:var(--amber);
+  text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1.5px}
+
+/* ---------- Screen 1 ---------- */
+.s1 h1{margin-bottom:4px}
+.s1 .sub{margin-bottom:18px}
+.s1 .ticket{flex:1;display:flex;flex-direction:column}
+.field{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;padding:12px 16px}
+.field-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.s1 .btn-primary{margin-top:16px;flex:none}
+
+/* ---------- Screen 2 ---------- */
+.s2 h1{margin-bottom:24px}
+.room{display:grid;grid-template-columns:1fr 20px 160px}
+.room-left{padding:16px 8px 16px 16px;display:flex;flex-direction:column}
+.code{font-family:"DM Mono",ui-monospace,monospace;font-weight:500;font-size:24px;line-height:30px;letter-spacing:.08em;margin:6px 0 14px}
+.room-left .btn-outline{margin-top:auto}
+.room-stub{display:flex;align-items:center;justify-content:center;padding:16px}
+.qr{width:128px;height:128px;display:block}
+.share{margin-top:12px}
+.region{display:flex;align-items:center;justify-content:space-between;margin-top:2px}
+.members{margin-top:20px;display:flex;flex-direction:column}
+.members-head{padding:16px 16px 4px}
+.mlist{padding:0 16px 4px}
+.mlist li{height:52px;display:flex;align-items:center;gap:12px}
+.mlist li+li{border-top:1px solid var(--perf)}
+.who{flex:1}
+.name{font-weight:600}
+/* Seat (03's idea, in ticket ink): the seat number is printed on it. Filled = ready, dashed = still deciding. */
+.seat{width:32px;height:26px;flex:none;border-radius:9px 9px 3px 3px;display:flex;align-items:center;justify-content:center;
+  font-family:"DM Mono",ui-monospace,monospace;font-weight:500;font-size:12px;line-height:16px;
+  border:1.5px dashed var(--ink);color:var(--ink)}
+.seat.ready{border-style:solid;background:var(--ink);color:var(--stock)}
+.stamp{display:inline-block;color:var(--bronze);border:1.5px solid var(--bronze);border-radius:3px;padding:3px 7px 3px 8px}
+.settle{margin-top:auto}
+.settle p{text-align:center;margin-top:8px}
+
+/* ---------- Screen 3 ---------- */
+.s3::before{background:radial-gradient(130% 60% at 50% -10%,rgba(245,192,74,.18),transparent 62%);opacity:.4} /* house lights, dimmed */
+.s3::after{background:radial-gradient(75% 46% at 50% 40%,rgba(245,192,74,.15),transparent 70%)}
+.slot{height:8px;border-radius:4px;background:#050403;border:1px solid #8A8172;margin:0 -4px;position:relative;z-index:1;flex:none}
+.feed{clip-path:inset(0 -60px -60px -60px)} /* clips only the top edge so the ticket feeds out of the slot but keeps its shadow */
+.feed .ticket{display:flex;flex-direction:column;border-radius:0 0 14px 14px}
+.hero{display:flex;gap:16px;padding:16px 36px 16px 16px;position:relative;
+  background:radial-gradient(120% 100% at 40% 0,var(--stock-lit),var(--stock) 75%)}
+.poster{aspect-ratio:2/3;position:relative;overflow:hidden;
+  background:
+    radial-gradient(circle at 30% 34%,#F7B955 0 9%,rgba(247,185,85,.35) 10% 17%,transparent 18%),
+    radial-gradient(circle at 66% 22%,#F2994A 0 6%,rgba(242,153,74,.3) 7% 12%,transparent 13%),
+    radial-gradient(circle at 58% 52%,#F7C873 0 4%,rgba(247,200,115,.3) 5% 9%,transparent 10%),
+    linear-gradient(180deg,#27506A 0%,#173247 55%,#0C1A28 100%)}
+.poster::after{content:"";position:absolute;inset:auto 0 0 0;height:22%;
+  background:linear-gradient(175deg,transparent 30%,#08121C 31%)} /* hill silhouette */
+.hero .poster{width:96px;height:144px;border-radius:6px;flex:none}
+.hero-info{display:flex;flex-direction:column;padding-top:4px}
+.hero-info h1{margin-bottom:10px}
+.tag{align-self:flex-start;margin-top:12px;color:var(--bronze);border:1.5px solid var(--bronze);border-radius:3px;padding:3px 7px 3px 8px}
+.serial{position:absolute;right:10px;top:50%;transform:translate(50%,-50%) rotate(90deg);transform-origin:center;white-space:nowrap;margin-right:6px}
+.why{padding:6px 16px 14px}
+.reasons{margin-top:10px;display:grid;gap:12px}
+.reasons strong{font-weight:600}
+.stub{padding:8px 16px 16px 16px;box-shadow:inset 3px 0 0 var(--red)}
+.btn-veto{height:48px;border:1.5px solid var(--red);color:var(--red);font-size:16px}
+.stub .note{margin-top:8px}
+.tokens{display:flex;align-items:center;gap:8px;margin-top:14px}
+.tokens ul{display:flex;gap:8px}
+.tokens .lbl.muted{margin-right:4px}
+.token{height:26px;padding:0 12px;border-radius:3px;display:inline-flex;align-items:center;
+  background:
+    radial-gradient(circle at 0 50%,var(--stock) 4px,transparent 4.5px),
+    radial-gradient(circle at 100% 50%,var(--stock) 4px,transparent 4.5px),
+    var(--stock-dim)}
+.attrib{font-size:12px;line-height:16px;color:var(--muted);margin-top:auto;padding-top:14px}
+
+/* ---------- Reveal motion: house lights down, projector up, ticket prints, reasons arrive ---------- */
+@media (prefers-reduced-motion: no-preference){
+  .s3::before{animation:dim 1200ms ease-out both}
+  .s3::after{animation:fade 900ms ease-out 500ms both}
+  .feed .ticket{animation:feed 900ms steps(16,end) 900ms both}
+  .reasons li{animation:fade 200ms ease-out both}
+  .reasons li:nth-child(1){animation-delay:1900ms}
+  .reasons li:nth-child(2){animation-delay:2020ms}
+  .reasons li:nth-child(3){animation-delay:2140ms}
+}
+@keyframes dim{from{opacity:1}to{opacity:.4}}
+@keyframes feed{from{transform:translateY(-100%)}to{transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+/* Veto state (not animated in this mockup): on "Tear it up", the stub section rotates 6deg about its
+   top-left corner and slides off to the right in 300ms, the house lights come up to full for that beat,
+   then they dim again as the runner-up ticket feeds from the slot. */
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="tick" viewBox="0 0 12 12"><path d="M2 6.4 4.7 9 10 3.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+<header class="canvas-head">
+  <div class="dir">06 Night Ticket</div>
+  <div class="one">A lit ticket in a dark cinema: the lights go down, the pick prints, a veto tears it.</div>
+</header>
+
+<div class="row">
+
+  <!-- ===================== 1 · Quick taps ===================== -->
+  <section>
+    <div class="cap">1 · Quick taps</div>
+    <div class="phone">
+      <div class="screen s1">
+        <div class="top"><span class="mark" role="img" aria-label="Truce">TRUCE</span><span class="lbl muted">Step 1 / 2</span></div>
+        <h1 class="title">What are you in for?</h1>
+        <p class="body muted sub">Four taps. Nobody else sees your answers.</p>
+
+        <div class="ticket">
+          <div class="sec field">
+            <div class="field-head"><h2 class="lbl" id="l-mood">Mood</h2><span class="lbl muted">Pick one</span></div>
+            <div class="chips" role="group" aria-labelledby="l-mood">
+              <button class="chip" aria-pressed="false"><svg class="tick" aria-hidden="true"><use href="#tick"/></svg>Cosy</button>
+              <button class="chip" aria-pressed="true"><svg class="tick" aria-hidden="true"><use href="#tick"/></svg>Funny</button>
+              <button class="chip" aria-pressed="false"><svg class="tick" aria-hidden="true"><use href="#tick"/></svg>Tense</button>
+              <button class="chip" aria-pressed="false"><svg class="tick" aria-hidden="true"><use href="#tick"/></svg>Moving</button>
+              <button class="chip" aria-pressed="false"><svg class="tick" aria-hidden="true"><use href="#tick"/></svg>Mind-bending</button>
+              <button class="chip" aria-pressed="false"><svg class="tick" aria-hidden="true"><use href="#tick"/></svg>Feel-good</button>
+            </div>
+          </div>
+          <div class="perf" aria-hidden="true"></div>
+          <div class="sec field">
+            <div class="field-head"><h2 class="lbl" id="l-energy">Energy</h2><span class="lbl muted">Pick one</span></div>
+            <div class="seg" role="group" aria-labelledby="l-energy">
+              <button aria-pressed="false"><svg class="tick" aria-hidden="true"><use href="#tick"/></svg>Half asleep</button>
+              <button aria-pressed="true"><svg class="tick" aria-hidden="true"><use href="#tick"/></svg>Awake</button>
+              <button aria-pressed="false"><svg class="tick" aria-hidden="true"><use href="#tick"/></svg>Wired</button>
+            </div>
+          </div>
+          <div class="perf" aria-hidden="true"></div>
+          <div class="sec field">
+            <div class="field-head"><h2 class="lbl" id="l-time">Time</h2><span class="lbl muted">Pick one</span></div>
+            <div class="seg" role="group" aria-labelledby="l-time">
+              <button aria-pressed="false"><svg class="tick" aria-hidden="true"><use href="#tick"/></svg>90 min</button>
+              <button aria-pressed="true"><svg class="tick" aria-hidden="true"><use href="#tick"/></svg>2 hours</button>
+              <button aria-pressed="false"><svg class="tick" aria-hidden="true"><use href="#tick"/></svg>2½ hours</button>
+              <button aria-pressed="false"><svg class="tick" aria-hidden="true"><use href="#tick"/></svg>No limit</button>
+            </div>
+          </div>
+          <div class="perf" aria-hidden="true"></div>
+          <div class="sec field">
+            <div class="field-head"><h2 class="lbl" id="l-svc">Services</h2><span class="lbl muted">Pick any</span></div>
+            <div class="chips" role="group" aria-labelledby="l-svc">
+              <button class="chip" aria-pressed="true"><svg class="tick" aria-hidden="true"><use href="#tick"/></svg>Netflix</button>
+              <button class="chip" aria-pressed="false"><svg class="tick" aria-hidden="true"><use href="#tick"/></svg>Prime Video</button>
+              <button class="chip" aria-pressed="true"><svg class="tick" aria-hidden="true"><use href="#tick"/></svg>Disney+</button>
+              <button class="chip" aria-pressed="false"><svg class="tick" aria-hidden="true"><use href="#tick"/></svg>Apple TV+</button>
+              <button class="chip" aria-pressed="false"><svg class="tick" aria-hidden="true"><use href="#tick"/></svg>Max</button>
+              <button class="chip" aria-pressed="false"><svg class="tick" aria-hidden="true"><use href="#tick"/></svg>Hulu</button>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary">Next: pick 3 films</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 2 · Lobby ===================== -->
+  <section>
+    <div class="cap">2 · Lobby</div>
+    <div class="phone">
+      <div class="screen s2">
+        <div class="top"><span class="mark" role="img" aria-label="Truce">TRUCE</span><span class="lbl muted">Host</span></div>
+        <h1 class="title">Box office is open.</h1>
+
+        <div class="ticket room">
+          <div class="sec room-left">
+            <h2 class="lbl muted">Room no.</h2>
+            <p class="code" aria-label="Room code 7KQ2M X4TNP">7KQ2M<br>X4TNP</p>
+            <button class="btn btn-outline">
+              <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><rect x="5.25" y="5.25" width="8.5" height="8.5" rx="1.5"/><path d="M10.75 5.25V3.75a1.5 1.5 0 0 0-1.5-1.5h-5.5a1.5 1.5 0 0 0-1.5 1.5v5.5a1.5 1.5 0 0 0 1.5 1.5h1.5"/></svg>
+              Copy invite link
+            </button>
+          </div>
+          <div class="vperf" aria-hidden="true"></div>
+          <div class="sec room-stub">
+            <svg class="qr" role="img" aria-label="QR code placeholder" viewBox="0 0 32 32" shape-rendering="crispEdges">
+              <defs>
+                <pattern id="qrp" width="7" height="7" patternUnits="userSpaceOnUse" fill="#1C1611">
+                  <rect x="0" y="0" width="1" height="1"/><rect x="3" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/>
+                  <rect x="1" y="1" width="1" height="1"/><rect x="4" y="1" width="1" height="1"/><rect x="6" y="1" width="1" height="1"/>
+                  <rect x="0" y="2" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="5" y="2" width="1" height="1"/>
+                  <rect x="3" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/>
+                  <rect x="0" y="4" width="1" height="1"/><rect x="1" y="4" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/>
+                  <rect x="2" y="5" width="1" height="1"/><rect x="5" y="5" width="1" height="1"/><rect x="6" y="5" width="1" height="1"/>
+                  <rect x="1" y="6" width="1" height="1"/><rect x="3" y="6" width="1" height="1"/>
+                </pattern>
+                <g id="finder"><rect width="9" height="9" fill="#F4ECD8"/><rect width="8" height="8" fill="#1C1611"/><rect x="1" y="1" width="6" height="6" fill="#F4ECD8"/><rect x="2" y="2" width="4" height="4" fill="#1C1611"/></g>
+              </defs>
+              <rect width="32" height="32" fill="#F4ECD8"/>
+              <rect width="32" height="32" fill="url(#qrp)"/>
+              <use href="#finder"/>
+              <use href="#finder" transform="translate(32 0) scale(-1 1)"/>
+              <use href="#finder" transform="translate(0 32) scale(1 -1)"/>
+            </svg>
+          </div>
+        </div>
+
+        <p class="small muted share">Scan or share. Nickname only, no account.</p>
+        <div class="region small">
+          <span class="muted">Streaming region: <span style="color:var(--text)">United Kingdom</span></span>
+          <button class="textbtn" aria-label="Change streaming region">Change</button>
+        </div>
+
+        <div class="ticket members">
+          <h2 class="sec lbl members-head">Row A · 2 of 3 ready</h2>
+          <div class="perf" aria-hidden="true"></div>
+          <ul class="sec mlist">
+            <li><span class="seat ready" aria-hidden="true">A1</span><span class="who"><span class="name">Sam</span> <span class="small muted">&nbsp;host · you</span></span><span class="lbl stamp" style="transform:rotate(-4deg)">Ready</span></li>
+            <li><span class="seat ready" aria-hidden="true">A2</span><span class="who name">Leila</span><span class="lbl stamp" style="transform:rotate(3deg)">Ready</span></li>
+            <li><span class="seat" aria-hidden="true">A3</span><span class="who name">Omar</span><span class="small muted">Picking films…</span></li>
+          </ul>
+        </div>
+
+        <div class="settle">
+          <button class="btn btn-primary">Settle it</button>
+          <p class="small muted">Two are ready. The lights go down when you tap.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 3 · Reveal ===================== -->
+  <section>
+    <div class="cap">3 · Reveal <a href="">Replay reveal</a></div>
+    <div class="phone">
+      <div class="screen s3">
+        <div class="top"><span class="mark" role="img" aria-label="Truce">TRUCE</span><span class="lbl muted">Admit 3 · Tonight</span></div>
+
+        <div class="slot" aria-hidden="true"></div>
+        <div class="feed">
+          <article class="ticket">
+            <div class="hero">
+              <div class="poster" role="img" aria-label="Poster for Paper Lanterns"></div>
+              <div class="hero-info">
+                <h1 class="title">Paper Lanterns</h1>
+                <span class="lbl muted">2019 · 1h 52m</span>
+                <span class="lbl tag">On Netflix</span>
+              </div>
+              <span class="lbl muted serial" aria-hidden="true">No. 000417</span>
+            </div>
+            <div class="perf" aria-hidden="true"></div>
+            <div class="sec why">
+              <h2 class="lbl muted">Why this one</h2>
+              <ul class="reasons body">
+                <li><strong>Sam,</strong> you picked The Quiet Orbit. This has the same slow-burn wonder.</li>
+                <li><strong>Leila,</strong> you wanted something moving. It earns its ending without wrecking you.</li>
+                <li><strong>Omar,</strong> it runs 1h 52m, so you still make your early start.</li>
+              </ul>
+            </div>
+            <div class="perf" aria-hidden="true"></div>
+            <div class="sec stub">
+              <button class="btn btn-veto">Tear it up and use my veto</button>
+              <p class="small muted note">One veto each. Tearing shows the runner-up.</p>
+              <div class="tokens">
+                <span class="lbl muted">Vetoes left</span>
+                <ul aria-label="Vetoes left: Sam, Leila, Omar">
+                  <li class="lbl token">Sam</li><li class="lbl token">Leila</li><li class="lbl token">Omar</li>
+                </ul>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <p class="attrib">Film data from TMDB · Streaming data by JustWatch</p>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>
