@@ -1,0 +1,35 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          "design/mockups/01-torn-stub/**"
+        ],
+        "createdAt": "2026-11-16T05:43:19.146Z",
+        "reason": "Notch gradients over a navy base; real pair is cream on navy, 15.2:1"
+      },
+      {
+        "rule": "gray-on-color",
+        "value": "*",
+        "files": [
+          "design/mockups/05-signed-truce/**"
+        ],
+        "createdAt": "2026-11-16T05:43:19.408Z",
+        "reason": "Green-tinted muted text, 6.8:1, part of the direction spec"
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          "design/mockups/**"
+        ],
+        "createdAt": "2026-11-16T05:43:19.641Z",
+        "reason": "Hairline-divided list rows and table cells with vertically centred text in fixed-height rows; exploratory mockups only"
+      }
+    ]
+  }
+}

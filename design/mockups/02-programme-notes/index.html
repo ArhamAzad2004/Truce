@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Truce · 02 Programme Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F4F4F0; --surface:#FFFFFF; --text:#0B0B0B; --muted:#55554F;
+  --accent:#FF4A1C; --accent-ink:#B8300A; --accent-2:#FFE45C;
+  --line:#0B0B0B; --danger:#B00020;
+  --display:"Anton",Impact,"Arial Narrow",sans-serif;
+  --body:"Archivo",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+  --ease:cubic-bezier(.2,.7,.2,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+ul{list-style:none}
+
+/* ---------- Canvas ---------- */
+body{background:#DCDCD8;color:#2B2B28;padding:48px;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+.canvas-head h1{font-size:20px;font-weight:600;line-height:28px}
+.canvas-head p{font-size:14px;line-height:20px;margin-top:2px}
+.row{display:flex;gap:40px;min-width:1250px;margin-top:28px}
+.col{flex:none}
+.cap{display:flex;align-items:center;justify-content:space-between;height:44px;margin-bottom:14px;font-size:13px;line-height:16px}
+.cap a{display:inline-flex;align-items:center;min-height:44px;padding:0 4px;color:#2B2B28;font-size:13px;text-underline-offset:3px}
+.cap a:focus-visible{outline:2px solid #2B2B28;outline-offset:2px}
+
+/* ---------- Phone ---------- */
+.phone{width:390px;height:844px;overflow:hidden;border-radius:44px;outline:10px solid #1A1A18;
+  background:var(--bg);color:var(--text);font-family:var(--body);font-size:16px;line-height:24px;
+  padding:20px 16px 24px;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
+.phone :focus-visible{outline:2px solid var(--text);outline-offset:2px;position:relative;z-index:2}
+
+/* ---------- Type scale ---------- */
+.display{font-family:var(--display);font-weight:400;font-size:64px;line-height:58px;letter-spacing:.01em;text-transform:uppercase}
+.name{font-family:var(--display);font-weight:400;font-size:22px;line-height:24px;text-transform:uppercase;letter-spacing:.01em}
+.label{font-family:var(--mono);font-weight:500;font-size:12px;line-height:16px;letter-spacing:.08em;text-transform:uppercase}
+.small{font-size:14px;line-height:20px;font-weight:500}
+.muted{color:var(--muted)}
+.hl{background:var(--accent-2);color:var(--text);padding:2px 6px}
+
+/* ---------- Masthead ---------- */
+.mast{height:44px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--line);flex:none;box-sizing:content-box}
+.mark{font-family:var(--display);font-size:30px;line-height:30px;letter-spacing:.02em;display:inline-flex;align-items:baseline}
+.mark i{display:inline-block;width:9px;height:9px;background:var(--accent);margin-left:2px}
+
+.rule{border-top:2px solid var(--line)}
+
+/* ---------- Choice tables ---------- */
+.sec{border-top:2px solid var(--line);margin-top:12px}
+.sec h2{display:flex;align-items:baseline;height:40px;padding-top:8px;font-weight:inherit}
+.sec h2 .name{width:40px;flex:none}
+.cells{display:grid;border:2px solid var(--text);background:var(--text);gap:2px}
+.c3{grid-template-columns:repeat(3,1fr)}
+.c4{grid-template-columns:repeat(4,1fr)}
+.cells button{position:relative;height:46px;background:var(--surface);font-weight:500;font-size:16px;line-height:20px;padding:0 6px;white-space:nowrap}
+.cells button[aria-pressed="true"]{background:var(--text);color:var(--bg);font-weight:700}
+.cells button[aria-pressed="true"]::after{content:"";position:absolute;top:6px;right:6px;width:10px;height:10px;background:var(--accent)}
+
+/* ---------- Primary block ---------- */
+.block{flex:none;margin-top:auto;height:64px;width:100%;background:var(--accent);color:var(--text);
+  display:flex;align-items:center;justify-content:space-between;padding:0 18px 0 20px;
+  font-family:var(--display);font-size:22px;line-height:24px;text-transform:uppercase;letter-spacing:.02em;text-align:left}
+.block svg{flex:none}
+
+.outline{border:2px solid var(--text);background:transparent;height:44px;padding:0 14px;display:inline-flex;align-items:center}
+
+/* ---------- Screen 1 ---------- */
+.s1 h1{margin-top:20px}
+.s1 .lede{margin-top:8px;text-wrap:balance}
+.s1 .block{margin-top:auto}
+
+/* ---------- Screen 2 ---------- */
+.s2 h1{margin-top:20px;margin-bottom:16px}
+.code-lab{margin-top:12px}
+.code{font-family:var(--display);font-size:52px;line-height:52px;letter-spacing:.02em;margin-top:6px;white-space:nowrap}
+.join{display:flex;gap:16px;margin-top:18px;align-items:stretch}
+.qr{width:124px;height:124px;flex:none;background:var(--surface);border:2px solid var(--text);padding:9px}
+.qr svg{display:block;width:100%;height:100%}
+.join-copy{display:flex;flex-direction:column;justify-content:space-between}
+.join-copy .outline{align-self:flex-start}
+.region{display:flex;align-items:center;gap:6px;margin-top:6px;height:44px}
+.region button{min-height:44px;padding:0 6px;font-weight:700;color:var(--text);text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:4px}
+.room-head{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:12px;border-top:2px solid var(--line)}
+.room-head h2{font-weight:inherit}
+.cast{margin-top:6px}
+.cast li{display:flex;align-items:baseline;height:48px;padding-top:14px}
+.cast .who{display:flex;align-items:baseline;gap:10px}
+.cast .lead{flex:1;border-bottom:2px dotted var(--text);margin:0 10px;transform:translateY(-3px);min-width:16px}
+.s2 .after{margin-top:10px}
+
+/* ---------- Screen 3 ---------- */
+.s3 .kicker{margin-top:12px}
+.s3 h1{margin-top:6px}
+.feature{display:flex;gap:16px;margin-top:12px}
+.poster{aspect-ratio:2/3;position:relative;overflow:hidden;
+  background:
+    radial-gradient(circle at 30% 34%,#F7B955 0 9%,rgba(247,185,85,.35) 10% 17%,transparent 18%),
+    radial-gradient(circle at 66% 22%,#F2994A 0 6%,rgba(242,153,74,.3) 7% 12%,transparent 13%),
+    radial-gradient(circle at 58% 52%,#F7C873 0 4%,rgba(247,200,115,.3) 5% 9%,transparent 10%),
+    linear-gradient(180deg,#27506A 0%,#173247 55%,#0C1A28 100%)}
+.poster::after{content:"";position:absolute;inset:auto 0 0 0;height:22%;
+  background:linear-gradient(175deg,transparent 30%,#08121C 31%)}
+.feature .poster{width:124px;height:186px;flex:none;border:2px solid var(--text)}
+.facts{flex:1;display:flex;flex-direction:column;justify-content:flex-end;border-top:2px solid var(--line)}
+.facts li{display:flex;align-items:center;gap:8px;min-height:40px;border-bottom:1px solid var(--line)}
+.facts li:last-child{border-bottom:2px solid var(--line)}
+.facts .k{color:var(--muted);width:68px;flex:none;white-space:nowrap}
+.notes-head{margin-top:12px;padding-top:10px;border-top:2px solid var(--line)}
+.notes-head h2{font-weight:inherit}
+.notes li{padding:7px 0 7px;border-bottom:1px solid var(--line)}
+.notes li:last-child{border-bottom:0}
+.notes p{margin-top:2px}
+.facts li .rl{flex:1}
+.facts .rl > span{display:flex;align-items:center}
+.veto{border-top:2px solid var(--line);padding-top:10px;margin-top:auto}
+.veto .outline{width:100%;height:48px;justify-content:space-between}
+.tokens{display:flex;align-items:center;gap:14px;margin-top:8px}
+.tokens span{display:inline-flex;align-items:center;gap:6px}
+.tokens i{display:inline-block;width:10px;height:10px;background:var(--text)}
+.attr{font-size:12px;line-height:16px;color:var(--muted);margin-top:8px}
+
+/* Clip wrapper for the credit roll; a little vertical room so Anton is never cropped */
+.rl{display:block;overflow:hidden;padding-block:4px;margin-block:-4px}
+.rl > *{display:block}
+
+/* ---------- Reveal: credit roll ---------- */
+@media (prefers-reduced-motion: no-preference){
+  .rl > *{transform:translateY(110%);animation:rise 500ms var(--ease) forwards;animation-delay:calc(var(--i) * 80ms + 200ms)}
+  .feature .poster{clip-path:inset(0 100% 0 0);animation:wipe 600ms var(--ease) 360ms forwards}
+  @keyframes rise{to{transform:translateY(0)}}
+  @keyframes wipe{to{clip-path:inset(0)}}
+}
+</style>
+</head>
+<body>
+
+<header class="canvas-head">
+  <h1>02 — Programme Notes</h1>
+  <p>A festival programme set in huge condensed type.</p>
+</header>
+
+<div class="row">
+
+  <!-- ===================== 1 · Quick taps ===================== -->
+  <section class="col" aria-label="Screen 1, quick taps">
+    <div class="cap">1 · Quick taps</div>
+    <div class="phone s1">
+      <div class="mast">
+        <span class="mark" aria-label="Truce">TRUCE<i aria-hidden="true"></i></span>
+        <span class="label" aria-label="Step 1 of 2">1 / 2</span>
+      </div>
+
+      <h1 class="display">Your call.</h1>
+      <p class="lede muted">Four questions, four taps. Your answers stay private.</p>
+
+      <div class="sec" role="group" aria-labelledby="q1">
+        <h2 id="q1"><span class="name" aria-hidden="true">01</span><span class="label">Mood</span></h2>
+        <div class="cells c3">
+          <button aria-pressed="false">Cosy</button>
+          <button aria-pressed="true">Funny</button>
+          <button aria-pressed="false">Tense</button>
+          <button aria-pressed="false">Moving</button>
+          <button aria-pressed="false">Mind-bending</button>
+          <button aria-pressed="false">Feel-good</button>
+        </div>
+      </div>
+
+      <div class="sec" role="group" aria-labelledby="q2">
+        <h2 id="q2"><span class="name" aria-hidden="true">02</span><span class="label">Energy</span></h2>
+        <div class="cells c3">
+          <button aria-pressed="false">Half asleep</button>
+          <button aria-pressed="true">Awake</button>
+          <button aria-pressed="false">Wired</button>
+        </div>
+      </div>
+
+      <div class="sec" role="group" aria-labelledby="q3">
+        <h2 id="q3"><span class="name" aria-hidden="true">03</span><span class="label">Time</span></h2>
+        <div class="cells c4">
+          <button aria-pressed="false">90 min</button>
+          <button aria-pressed="true">2 hours</button>
+          <button aria-pressed="false">2½ hours</button>
+          <button aria-pressed="false">No limit</button>
+        </div>
+      </div>
+
+      <div class="sec" role="group" aria-labelledby="q4">
+        <h2 id="q4"><span class="name" aria-hidden="true">04</span><span class="label">Services</span></h2>
+        <div class="cells c3">
+          <button aria-pressed="true">Netflix</button>
+          <button aria-pressed="false">Prime Video</button>
+          <button aria-pressed="true">Disney+</button>
+          <button aria-pressed="false">Apple TV+</button>
+          <button aria-pressed="false">Max</button>
+          <button aria-pressed="false">Hulu</button>
+        </div>
+      </div>
+
+      <button class="block">Next: pick 3 films
+        <svg width="28" height="16" viewBox="0 0 28 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square" aria-hidden="true"><path d="M1 8h24M18 1l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </section>
+
+  <!-- ===================== 2 · Lobby ===================== -->
+  <section class="col" aria-label="Screen 2, lobby">
+    <div class="cap">2 · Lobby</div>
+    <div class="phone s2">
+      <div class="mast">
+        <span class="mark" aria-label="Truce">TRUCE<i aria-hidden="true"></i></span>
+        <span class="label">Host</span>
+      </div>
+
+      <h1 class="display">Doors open.</h1>
+
+      <div class="rule"></div>
+      <p class="label code-lab">Room code</p>
+      <p class="code" aria-label="Room code 7 K Q 2 M, X 4 T N P">7KQ2M X4TNP</p>
+
+      <div class="join">
+        <div class="qr" role="img" aria-label="QR code placeholder">
+          <svg viewBox="0 0 21 21" shape-rendering="crispEdges" aria-hidden="true"><path fill="#0B0B0B" d="M8 0h1v1h-1zM10 0h2v1h-2zM9 1h1v1h-1zM11 2h2v1h-2zM10 3h1v1h-1zM10 4h1v1h-1zM8 6h2v1h-2zM11 6h2v1h-2zM8 7h3v1h-3zM2 8h2v1h-2zM6 8h2v1h-2zM9 8h3v1h-3zM15 8h6v1h-6zM2 9h1v1h-1zM12 9h1v1h-1zM14 9h1v1h-1zM16 9h3v1h-3zM0 10h1v1h-1zM2 10h4v1h-4zM7 10h1v1h-1zM9 10h1v1h-1zM12 10h1v1h-1zM19 10h2v1h-2zM0 11h3v1h-3zM4 11h1v1h-1zM8 11h1v1h-1zM10 11h2v1h-2zM13 11h1v1h-1zM15 11h1v1h-1zM19 11h1v1h-1zM0 12h1v1h-1zM4 12h3v1h-3zM8 12h1v1h-1zM13 12h2v1h-2zM16 12h1v1h-1zM19 12h1v1h-1zM12 13h2v1h-2zM16 13h3v1h-3zM8 14h1v1h-1zM11 14h1v1h-1zM13 14h3v1h-3zM8 15h1v1h-1zM10 15h1v1h-1zM16 15h3v1h-3zM11 16h1v1h-1zM13 16h2v1h-2zM16 16h1v1h-1zM18 16h2v1h-2zM8 17h2v1h-2zM16 17h1v1h-1zM8 18h6v1h-6zM16 18h3v1h-3zM20 18h1v1h-1zM10 19h1v1h-1zM13 19h4v1h-4zM19 19h1v1h-1zM9 20h2v1h-2zM12 20h3v1h-3zM19 20h2v1h-2zM0 0h7v7h-7zM1 1v5h5v-5zM2 2h3v3h-3zM14 0h7v7h-7zM15 1v5h5v-5zM16 2h3v3h-3zM0 14h7v7h-7zM1 15v5h5v-5zM2 16h3v3h-3z"/></svg>
+        </div>
+        <div class="join-copy">
+          <p>Scan to join. Nickname only, no account.</p>
+          <button class="outline label">Copy invite link</button>
+        </div>
+      </div>
+      <p class="region small muted">Streaming region: United Kingdom <button class="small">Change</button></p>
+
+      <div class="room-head">
+        <h2 class="label">In the room</h2>
+        <span class="label">2 / 3 ready</span>
+      </div>
+      <ul class="cast">
+        <li><span class="who"><span class="name">Sam</span><span class="label muted">Host · you</span></span><span class="lead" aria-hidden="true"></span><span class="label hl">Ready</span></li>
+        <li><span class="who"><span class="name">Leila</span></span><span class="lead" aria-hidden="true"></span><span class="label hl">Ready</span></li>
+        <li><span class="who"><span class="name">Omar</span></span><span class="lead" aria-hidden="true"></span><span class="label muted">Picking films</span></li>
+      </ul>
+
+      <button class="block">Settle it
+        <svg width="28" height="16" viewBox="0 0 28 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square" aria-hidden="true"><path d="M1 8h24M18 1l7 7-7 7"/></svg>
+      </button>
+      <p class="small muted after">Two are ready. Settle now or wait for Omar.</p>
+    </div>
+  </section>
+
+  <!-- ===================== 3 · Reveal ===================== -->
+  <section class="col" aria-label="Screen 3, reveal">
+    <div class="cap">3 · Reveal <a href="">Replay reveal</a></div>
+    <div class="phone s3">
+      <div class="mast">
+        <span class="mark" aria-label="Truce">TRUCE<i aria-hidden="true"></i></span>
+        <span class="label">Settled</span>
+      </div>
+
+      <h1 class="display">
+        <span class="rl"><span style="--i:1">Paper</span></span>
+        <span class="rl"><span style="--i:2">Lanterns</span></span>
+      </h1>
+
+      <div class="feature">
+        <div class="poster" role="img" aria-label="Poster for Paper Lanterns"></div>
+        <ul class="facts label">
+          <li><span class="rl"><span style="--i:3"><span class="k">Year —</span>2019</span></span></li>
+          <li><span class="rl"><span style="--i:4"><span class="k">Runs —</span>1h 52m</span></span></li>
+          <li><span class="rl"><span style="--i:5"><span class="k">Where —</span><span class="hl">On Netflix</span></span></span></li>
+        </ul>
+      </div>
+
+      <div class="notes-head"><h2 class="label"><span class="rl"><span style="--i:6">Programme notes</span></span></h2></div>
+      <ul class="notes">
+        <li><div class="rl"><div style="--i:7"><span class="name">Sam</span><p>You picked The Quiet Orbit. This has the same slow-burn wonder.</p></div></div></li>
+        <li><div class="rl"><div style="--i:8"><span class="name">Leila</span><p>You wanted something moving. It earns its ending without wrecking you.</p></div></div></li>
+        <li><div class="rl"><div style="--i:9"><span class="name">Omar</span><p>It runs 1h 52m, so you still make your early start.</p></div></div></li>
+      </ul>
+
+      <div class="veto">
+        <button class="outline label">Veto — show the runner-up</button>
+        <p class="tokens label">
+          <span class="muted">One each</span>
+          <span><i aria-hidden="true"></i>Sam</span>
+          <span><i aria-hidden="true"></i>Leila</span>
+          <span><i aria-hidden="true"></i>Omar</span>
+        </p>
+      </div>
+      <p class="attr">Film data from TMDB · Streaming data by JustWatch</p>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

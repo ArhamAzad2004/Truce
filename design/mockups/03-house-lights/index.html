@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>03 — House Lights · Truce mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Instrument+Serif:ital@0;1&family=Martian+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0F0D0B; --surface:#1B1815; --text:#F2EBDD; --muted:#A39B8C;
+  --accent:#F5C04A; --accent-2:#E86A4A; --line:#6B6357; --danger:#FF7A66;
+  --ink:#0F0D0B;
+  --spill:radial-gradient(120% 55% at 50% -10%, rgba(245,192,74,.14), transparent 60%);
+  --serif:"Instrument Serif", Georgia, serif;
+  --sans:"Atkinson Hyperlegible", system-ui, sans-serif;
+  --mono:"Martian Mono", ui-monospace, monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+button,a{font:inherit;color:inherit}
+button{background:none;border:0;cursor:pointer}
+ul{list-style:none}
+
+/* ---------- Canvas ---------- */
+body{background:#DCDCD8;color:#2B2B28;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;padding:48px;overflow-x:auto}
+.canvas-head h1{font-size:20px;font-weight:600;line-height:28px}
+.canvas-head p{font-size:14px;line-height:20px;margin-top:2px}
+.row{display:flex;gap:40px;min-width:1250px;margin-top:32px}
+.frame-col{flex:none}
+.frame-cap{display:flex;align-items:center;justify-content:space-between;height:44px;margin-bottom:14px;font-size:13px;font-weight:500}
+.frame-cap a{display:inline-flex;align-items:center;min-height:44px;padding:0 4px;color:#2B2B28;text-underline-offset:3px}
+.frame-cap a:focus-visible{outline:2px solid #2B2B28;outline-offset:2px}
+
+/* ---------- Phone ---------- */
+.phone{width:390px;height:844px;overflow:hidden;border-radius:44px;outline:10px solid #1A1A18;background:var(--bg);position:relative}
+.screen{height:100%;display:flex;flex-direction:column;padding:20px 16px 24px;color:var(--text);font-family:var(--sans);font-size:16px;line-height:24px;background:var(--spill),var(--bg);position:relative}
+.screen :focus-visible{outline:2px solid var(--text);outline-offset:2px}
+
+/* ---------- Type ---------- */
+.display{font-family:var(--serif);font-weight:400;font-size:44px;line-height:46px;letter-spacing:-.005em}
+.title{font-family:var(--serif);font-weight:400;font-size:32px;line-height:36px;letter-spacing:-.005em}
+.body{font-size:16px;line-height:24px}
+.small{font-size:14px;line-height:20px}
+.label{font-family:var(--mono);font-weight:500;font-size:12px;line-height:16px;letter-spacing:.1em;text-transform:uppercase}
+.muted{color:var(--muted)}
+.amber{color:var(--accent)}
+
+/* ---------- Wordmark ---------- */
+.topbar{display:flex;align-items:center;justify-content:space-between;height:32px}
+.wordmark{display:inline-flex;align-items:baseline;gap:0;color:var(--text);text-decoration:none;line-height:32px}
+.wordmark .br{font-family:var(--mono);font-weight:400;font-size:18px;color:var(--accent)}
+.wordmark .w{font-family:var(--serif);font-style:italic;font-size:26px;letter-spacing:-.01em}
+
+/* ---------- Buttons ---------- */
+.btn-primary{display:flex;align-items:center;justify-content:center;width:100%;height:56px;border-radius:4px;background:var(--accent);color:var(--ink);font-weight:700;font-size:16px}
+.btn-outline{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 14px;border:1px solid var(--line);border-radius:4px;color:var(--text);font-weight:700;font-size:16px;white-space:nowrap}
+.btn-text{display:inline-flex;align-items:center;min-height:44px;min-width:44px;padding:0 4px;color:var(--accent);font-weight:700;text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
+.tick{width:12px;height:12px;flex:none}
+
+/* ---------- Screen 1: quick taps ---------- */
+.intro{margin-top:20px}
+.intro p{margin-top:6px}
+.groups{margin-top:32px;display:flex;flex-direction:column;gap:20px}
+.group h2{color:var(--accent);margin-bottom:8px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.chip{display:flex;align-items:center;justify-content:center;gap:6px;height:44px;border:1px solid var(--line);border-radius:4px;background:var(--surface);font-size:16px;color:var(--text);white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--ink);font-weight:700}
+
+.dimmer{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.dimmer::before,.dimmer::after{content:"";position:absolute;top:13px;height:2px;left:calc((100% - 16px)/6);pointer-events:none}
+.dimmer::before{right:calc((100% - 16px)/6);background:var(--line)}
+.dimmer::after{width:calc((100% - 16px)/3 + 8px);background:var(--accent)} /* amber up to the selected (2nd) stop */
+.stop{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:52px;padding-top:6px;font-size:14px;line-height:20px;color:var(--muted)}
+.stop i{width:16px;height:16px;border-radius:50%;background:var(--bg);border:1.5px solid var(--line)}
+.stop.passed i{border-color:var(--accent)}
+.stop[aria-pressed="true"]{color:var(--text);font-weight:700}
+.stop[aria-pressed="true"] i{background:var(--accent);border-color:var(--accent);box-shadow:0 0 0 4px var(--bg)}
+
+.segs{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);border-radius:4px;overflow:hidden;background:var(--surface)}
+.seg{display:flex;align-items:center;justify-content:center;gap:5px;height:44px;font-size:16px;white-space:nowrap;border-left:1px solid var(--line)}
+.seg:first-child{border-left:0}
+.seg[aria-pressed="true"]{background:var(--accent);color:var(--ink);font-weight:700}
+.seg:focus-visible{outline-offset:-4px;outline-color:var(--text)}
+.seg[aria-pressed="true"]:focus-visible{outline-color:var(--ink)}
+.s1 .btn-primary{margin-top:auto}
+
+/* ---------- Screen 2: lobby ---------- */
+.s2 h1{margin-top:20px}
+.room{margin-top:18px}
+.room-row{display:flex;gap:8px;margin-top:8px}
+.code{flex:1;display:flex;align-items:center;justify-content:center;height:52px;border:1px solid var(--line);border-radius:4px;background:var(--surface);font-family:var(--mono);font-weight:500;font-size:22px;letter-spacing:.08em;white-space:nowrap}
+.room-row .btn-outline{height:52px;padding:0 12px}
+.qr-wrap{display:flex;flex-direction:column;align-items:center;margin-top:20px}
+.qr{width:148px;height:148px;padding:12px;background:#F2EBDD;border-radius:4px}
+.qr svg{display:block;width:124px;height:124px}
+.qr-wrap .small{margin-top:10px;text-align:center}
+.region{display:flex;align-items:center;justify-content:center;gap:4px;height:44px}
+.seats-head{margin-top:14px}
+.seats{display:flex;gap:10px;margin-top:10px}
+.seat{width:28px;height:24px;border-radius:9px 9px 3px 3px;border:1px dashed var(--line);flex:none}
+.seat.taken{border:1.5px solid var(--accent)}
+.seat.ready{border:1.5px solid var(--accent);background:var(--accent)}
+.members{margin-top:12px}
+.members li{display:flex;align-items:center;gap:12px;height:48px;border-top:1px solid #2A2621}
+.members li:last-child{border-bottom:1px solid #2A2621}
+.members .seat{width:20px;height:17px;border-radius:7px 7px 2px 2px}
+.members .name{font-weight:700}
+.members .who{flex:1;display:flex;align-items:baseline;gap:8px}
+.s2 .foot{margin-top:auto}
+.foot .small{margin-top:10px;text-align:center}
+
+/* ---------- Screen 3: reveal ---------- */
+.s3{padding:0 0 24px;background:var(--bg)}
+.s3::before{content:"";position:absolute;inset:0;background:var(--spill);opacity:.4;pointer-events:none;z-index:2}
+.hero{position:relative;height:400px;overflow:hidden;flex:none}
+.poster{aspect-ratio:2/3;position:relative;overflow:hidden;
+  background:
+    radial-gradient(circle at 30% 34%,#F7B955 0 9%,rgba(247,185,85,.35) 10% 17%,transparent 18%),
+    radial-gradient(circle at 66% 22%,#F2994A 0 6%,rgba(242,153,74,.3) 7% 12%,transparent 13%),
+    radial-gradient(circle at 58% 52%,#F7C873 0 4%,rgba(247,200,115,.3) 5% 9%,transparent 10%),
+    linear-gradient(180deg,#27506A 0%,#173247 55%,#0C1A28 100%)}
+.poster::after{content:"";position:absolute;inset:auto 0 0 0;height:22%;
+  background:linear-gradient(175deg,transparent 30%,#08121C 31%)} /* hill silhouette */
+.hero .poster{width:390px}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 45%,var(--bg) 100%)}
+.plate{background:rgba(0,0,0,.72);border-radius:4px;padding:8px 12px}
+.hero .plate{position:absolute;top:20px;left:16px;z-index:3;padding:0 12px}
+.film{position:relative;z-index:3;margin-top:-126px;padding:0 16px}
+.film .meta{margin-top:8px}
+.captions{position:relative;z-index:3;display:flex;flex-direction:column;gap:8px;margin-top:18px;padding:0 16px}
+.captions .plate p{font-weight:700;font-size:17px;line-height:24px;margin-top:4px}
+.veto{position:relative;z-index:3;padding:0 16px;margin-top:18px}
+.veto-row{display:flex;align-items:center;gap:14px}
+.btn-exit{display:inline-flex;align-items:center;gap:10px;height:44px;padding:0 14px;border:1.5px solid var(--accent-2);border-radius:4px;color:var(--accent-2);white-space:nowrap;flex:none}
+.btn-exit svg{width:14px;height:14px;flex:none}
+.tokens{display:flex;gap:18px;margin-top:14px}
+.tokens li{display:flex;align-items:center;gap:8px;color:var(--muted)}
+.tokens .seat{width:20px;height:17px;border-radius:7px 7px 2px 2px;border:1.5px solid var(--accent-2)}
+.attrib{position:relative;z-index:3;margin-top:auto;padding:0 16px;font-size:12px;line-height:16px;color:var(--muted)}
+
+/* ---------- Reveal motion: lights down, then captions ---------- */
+@media (prefers-reduced-motion: no-preference){
+  .s3::before{animation:spill 1200ms ease-out both}
+  .hero .poster{animation:lights 1200ms ease-out both}
+  .film{animation:fade 300ms ease-out 900ms both}
+  .captions .plate{animation:fade 250ms ease-out both}
+  .captions .plate:nth-child(1){animation-delay:1400ms}
+  .captions .plate:nth-child(2){animation-delay:2000ms}
+  .captions .plate:nth-child(3){animation-delay:2600ms}
+  .veto{animation:fade 300ms ease-out 3100ms both}
+  @keyframes spill{from{opacity:1}to{opacity:.4}}
+  @keyframes lights{from{filter:brightness(.25)}to{filter:brightness(1)}}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+}
+</style>
+</head>
+<body>
+
+<header class="canvas-head">
+  <h1>03 — House Lights</h1>
+  <p>A dim auditorium where the reasons arrive as subtitles.</p>
+</header>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="tick" viewBox="0 0 12 12"><path d="M2 6.4 4.8 9 10 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+<div class="row">
+
+  <!-- ============ 1 · Quick taps ============ -->
+  <section class="frame-col" aria-label="Screen 1, quick taps">
+    <div class="frame-cap"><span>1 · Quick taps</span></div>
+    <div class="phone">
+      <div class="screen s1">
+        <div class="topbar">
+          <span class="wordmark" aria-label="truce"><span class="br">[&thinsp;</span><span class="w">truce</span><span class="br">&thinsp;]</span></span>
+          <span class="label muted">1 of 2</span>
+        </div>
+        <div class="intro">
+          <h1 class="title">Before the lights go down.</h1>
+          <p class="body muted">Four taps. Only you see these.</p>
+        </div>
+        <div class="groups">
+          <div class="group">
+            <h2 class="label">Mood</h2>
+            <div class="grid3">
+              <button class="chip" aria-pressed="false">Cosy</button>
+              <button class="chip" aria-pressed="true"><svg class="tick" aria-hidden="true"><use href="#tick"/></svg>Funny</button>
+              <button class="chip" aria-pressed="false">Tense</button>
+              <button class="chip" aria-pressed="false">Moving</button>
+              <button class="chip" aria-pressed="false">Mind-bending</button>
+              <button class="chip" aria-pressed="false">Feel-good</button>
+            </div>
+          </div>
+          <div class="group">
+            <h2 class="label">Energy</h2>
+            <div class="dimmer">
+              <button class="stop passed" aria-pressed="false"><i></i>Half asleep</button>
+              <button class="stop" aria-pressed="true"><i></i>Awake</button>
+              <button class="stop" aria-pressed="false"><i></i>Wired</button>
+            </div>
+          </div>
+          <div class="group">
+            <h2 class="label">Time</h2>
+            <div class="segs">
+              <button class="seg" aria-pressed="false">90 min</button>
+              <button class="seg" aria-pressed="true"><svg class="tick" aria-hidden="true"><use href="#tick"/></svg>2 hours</button>
+              <button class="seg" aria-pressed="false">2½ hours</button>
+              <button class="seg" aria-pressed="false">No limit</button>
+            </div>
+          </div>
+          <div class="group">
+            <h2 class="label">Services</h2>
+            <div class="grid3">
+              <button class="chip" aria-pressed="true"><svg class="tick" aria-hidden="true"><use href="#tick"/></svg>Netflix</button>
+              <button class="chip" aria-pressed="false">Prime Video</button>
+              <button class="chip" aria-pressed="true"><svg class="tick" aria-hidden="true"><use href="#tick"/></svg>Disney+</button>
+              <button class="chip" aria-pressed="false">Apple TV+</button>
+              <button class="chip" aria-pressed="false">Max</button>
+              <button class="chip" aria-pressed="false">Hulu</button>
+            </div>
+          </div>
+        </div>
+        <button class="btn-primary">Next: pick 3 films</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 2 · Lobby ============ -->
+  <section class="frame-col" aria-label="Screen 2, lobby">
+    <div class="frame-cap"><span>2 · Lobby</span></div>
+    <div class="phone">
+      <div class="screen s2">
+        <div class="topbar">
+          <span class="wordmark" aria-label="truce"><span class="br">[&thinsp;</span><span class="w">truce</span><span class="br">&thinsp;]</span></span>
+          <span class="label muted">Host</span>
+        </div>
+        <h1 class="title">Saving seats.</h1>
+
+        <div class="room">
+          <h2 class="label muted">Room code</h2>
+          <div class="room-row">
+            <div class="code" aria-label="Room code 7KQ2M X4TNP">7KQ2M X4TNP</div>
+            <button class="btn-outline">Copy invite link</button>
+          </div>
+        </div>
+
+        <div class="qr-wrap">
+          <div class="qr" role="img" aria-label="QR code placeholder">
+            <svg viewBox="0 0 25 25" shape-rendering="crispEdges" aria-hidden="true" fill="#0F0D0B">
+              <path fill-rule="evenodd" d="M0 0h7v7h-7zM1 1v5h5v-5zM18 0h7v7h-7zM19 1v5h5v-5zM0 18h7v7h-7zM1 19v5h5v-5z"/>
+              <path d="M2 2h3v3h-3zM20 2h3v3h-3zM2 20h3v3h-3z"/>
+              <path d="M8 0h1v1h-1zM10 0h7v1h-7zM8 1h1v1h-1zM10 1h1v1h-1zM14 1h1v1h-1zM16 1h1v1h-1zM8 2h3v1h-3zM12 2h1v1h-1zM14 2h3v1h-3zM8 3h1v1h-1zM11 3h3v1h-3zM16 3h1v1h-1zM11 4h1v1h-1zM13 4h1v1h-1zM15 4h2v1h-2zM12 5h1v1h-1zM12 6h1v1h-1zM8 7h1v1h-1zM10 7h4v1h-4zM15 7h2v1h-2zM1 8h2v1h-2zM6 8h2v1h-2zM10 8h4v1h-4zM16 8h4v1h-4zM0 9h1v1h-1zM5 9h2v1h-2zM8 9h2v1h-2zM12 9h5v1h-5zM20 9h4v1h-4zM3 10h3v1h-3zM7 10h1v1h-1zM10 10h3v1h-3zM16 10h2v1h-2zM21 10h1v1h-1zM3 11h6v1h-6zM15 11h4v1h-4zM0 12h1v1h-1zM6 12h1v1h-1zM8 12h1v1h-1zM11 12h1v1h-1zM14 12h2v1h-2zM18 12h1v1h-1zM22 12h3v1h-3zM7 13h7v1h-7zM15 13h2v1h-2zM23 13h2v1h-2zM0 14h1v1h-1zM2 14h1v1h-1zM5 14h2v1h-2zM8 14h3v1h-3zM3 15h1v1h-1zM6 15h5v1h-5zM14 15h1v1h-1zM17 15h1v1h-1zM20 15h1v1h-1zM22 15h1v1h-1zM0 16h5v1h-5zM6 16h4v1h-4zM12 16h1v1h-1zM16 16h2v1h-2zM19 16h2v1h-2zM23 16h1v1h-1zM10 17h1v1h-1zM13 17h1v1h-1zM17 17h1v1h-1zM19 17h1v1h-1zM22 17h1v1h-1zM24 17h1v1h-1zM9 18h6v1h-6zM16 18h6v1h-6zM24 18h1v1h-1zM9 19h1v1h-1zM14 19h1v1h-1zM17 19h1v1h-1zM21 19h4v1h-4zM9 20h2v1h-2zM14 20h6v1h-6zM23 20h1v1h-1zM8 21h3v1h-3zM13 21h2v1h-2zM18 21h4v1h-4zM12 22h1v1h-1zM14 22h1v1h-1zM17 22h1v1h-1zM23 22h2v1h-2zM15 23h4v1h-4zM8 24h1v1h-1zM14 24h1v1h-1zM16 24h2v1h-2zM19 24h1v1h-1zM23 24h1v1h-1z"/>
+            </svg>
+          </div>
+          <p class="small muted">Scan to join. Nickname only, no account.</p>
+          <div class="region small"><span class="muted">Streaming region: United Kingdom</span><button class="btn-text small">Change</button></div>
+        </div>
+
+        <h2 class="label muted seats-head">Row A · 2 of 3 ready</h2>
+        <div class="seats" role="img" aria-label="Row A: 2 seats ready, 1 taken, 5 empty">
+          <span class="seat ready"></span><span class="seat ready"></span><span class="seat taken"></span>
+          <span class="seat"></span><span class="seat"></span><span class="seat"></span><span class="seat"></span><span class="seat"></span>
+        </div>
+
+        <ul class="members" aria-label="People in the room">
+          <li><span class="seat ready" aria-hidden="true"></span><span class="who"><span class="name">Sam</span><span class="small muted">host · you</span></span><span class="small amber">Ready</span></li>
+          <li><span class="seat ready" aria-hidden="true"></span><span class="who"><span class="name">Leila</span></span><span class="small amber">Ready</span></li>
+          <li><span class="seat taken" aria-hidden="true"></span><span class="who"><span class="name">Omar</span></span><span class="small muted">Picking films…</span></li>
+        </ul>
+
+        <div class="foot">
+          <button class="btn-primary">Settle it</button>
+          <p class="small muted">Two are ready. The lights go down when you tap.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 3 · Reveal ============ -->
+  <section class="frame-col" aria-label="Screen 3, reveal">
+    <div class="frame-cap"><span>3 · Reveal</span><a href="">Replay reveal</a></div>
+    <div class="phone">
+      <div class="screen s3">
+        <div class="hero">
+          <div class="poster" aria-hidden="true"></div>
+          <span class="wordmark plate" aria-label="truce"><span class="br">[&thinsp;</span><span class="w">truce</span><span class="br">&thinsp;]</span></span>
+        </div>
+
+        <div class="film">
+          <h1 class="display">Paper Lanterns</h1>
+          <p class="label muted meta">2019 · 1h 52m · <span class="amber">On Netflix</span></p>
+        </div>
+
+        <div class="captions">
+          <div class="plate"><span class="label amber">[Sam]</span><p>You picked The Quiet Orbit. This has the same slow-burn wonder.</p></div>
+          <div class="plate"><span class="label amber">[Leila]</span><p>You wanted something moving. It earns its ending without wrecking you.</p></div>
+          <div class="plate"><span class="label amber">[Omar]</span><p>It runs 1h 52m, so you still make your early start.</p></div>
+        </div>
+
+        <div class="veto">
+          <div class="veto-row">
+            <button class="btn-exit label">
+              <svg viewBox="0 0 14 14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 1.5h-4v11h4M9 4l3 3-3 3M12 7H5"/></svg>
+              Exit · Use my veto
+            </button>
+            <p class="small muted">One each. Shows the runner-up.</p>
+          </div>
+          <ul class="tokens" aria-label="Vetoes left">
+            <li><span class="seat" aria-hidden="true"></span><span class="label">Sam</span></li>
+            <li><span class="seat" aria-hidden="true"></span><span class="label">Leila</span></li>
+            <li><span class="seat" aria-hidden="true"></span><span class="label">Omar</span></li>
+          </ul>
+          <!-- Used veto: the token gets a diagonal strike in --accent-2 and its label is set in --muted with line-through. -->
+        </div>
+
+        <p class="attrib">Film data from TMDB · Streaming data by JustWatch</p>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>05 — Signed Truce · Truce mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,wght@0,500;0,700;1,500&family=Caveat:wght@600&family=Libre+Franklin:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0F3B2D; --surface:#F2EAD3; --text:#F4EEDD; --ink:#1A1A14;
+  --muted:#B5C4B4; --muted-ink:#5A5744; --accent:#D9B45F; --accent-2:#A62B1A;
+  --line:#6F9080; --line-doc:#8C8468; --danger:#FF9C8A;
+  --serif:"Bodoni Moda",Didot,"Times New Roman",serif;
+  --sans:"Libre Franklin",system-ui,sans-serif;
+  --mono:"Spline Sans Mono",ui-monospace,monospace;
+  --hand:"Caveat",cursive;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+ul{list-style:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+
+/* ---------- Canvas ---------- */
+body{background:#DCDCD8;color:#2B2B28;font-family:system-ui,sans-serif;padding:48px;overflow-x:auto}
+.canvas-head{margin-bottom:36px}
+.canvas-head h1{font-size:20px;font-weight:600;line-height:28px}
+.canvas-head p{font-size:14px;line-height:20px}
+.row{display:flex;gap:40px;min-width:1250px}
+.cap{font-size:13px;line-height:18px;margin-bottom:22px;display:flex;gap:12px;align-items:baseline}
+.cap a{color:#2B2B28}
+
+/* ---------- Phone ---------- */
+.phone{width:390px;height:844px;overflow:hidden;border-radius:44px;outline:10px solid #1A1A18;
+  background:var(--bg);color:var(--text);font-family:var(--sans);font-size:16px;line-height:24px;
+  padding:20px 16px 24px;display:flex;flex-direction:column}
+.phone :focus-visible{outline:2px solid var(--text);outline-offset:2px}
+.doc :focus-visible{outline-color:var(--ink)}
+
+/* ---------- Type ---------- */
+.display{font-family:var(--serif);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:30px;line-height:36px;text-align:center}
+.title{font-family:var(--serif);font-weight:500;font-size:34px;line-height:38px}
+.heading{font-family:var(--serif);font-weight:500;font-style:italic;font-size:20px;line-height:26px;color:var(--accent)}
+.small{font-size:14px;line-height:20px;font-weight:500}
+.label{font-family:var(--mono);font-weight:500;font-size:12px;line-height:16px;letter-spacing:.14em;text-transform:uppercase}
+.muted{color:var(--muted)}
+.muted-ink{color:var(--muted-ink)}
+.center{text-align:center}
+
+/* ---------- Wordmark ---------- */
+.wordmark{display:flex;flex-direction:column;align-items:center;gap:4px}
+.wordmark .word{display:flex;align-items:center;gap:12px;font-family:var(--serif);font-weight:700;font-size:20px;line-height:24px;letter-spacing:.24em;color:var(--text)}
+.wordmark .word span{padding-left:.24em} /* balances the trailing tracking */
+.wordmark .word::before,.wordmark .word::after{content:"";width:28px;height:1px;background:var(--accent)}
+.wordmark i{width:5px;height:5px;background:var(--accent);transform:rotate(45deg)}
+
+/* ---------- Diamond rule ---------- */
+.drule{position:relative;width:132px;height:7px;margin:0 auto}
+.drule::before{content:"";position:absolute;left:0;right:0;top:3px;height:1px;background:var(--accent)}
+.drule::after{content:"";position:absolute;left:50%;top:50%;width:6px;height:6px;background:var(--accent);transform:translate(-50%,-50%) rotate(45deg)}
+
+/* ---------- Controls on green ---------- */
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.opt{min-height:44px;border:1px solid var(--line);border-radius:2px;color:var(--text);
+  display:flex;align-items:center;justify-content:center;gap:6px;padding:0 4px;white-space:nowrap;font-size:16px;line-height:20px}
+.opt[aria-pressed="true"]{background:var(--surface);border-color:var(--surface);color:var(--ink);font-weight:600}
+.tick{flex:none;width:12px;height:12px;background:var(--ink);display:block}
+.btn{display:flex;align-items:center;justify-content:center;width:100%;height:56px;border-radius:2px;
+  background:var(--accent);color:var(--ink);font-weight:600;font-size:16px}
+.btn-ghost{display:flex;align-items:center;justify-content:center;width:100%;height:48px;border-radius:2px;
+  border:1px solid var(--line);color:var(--text);font-size:16px;font-weight:500}
+.textbtn{min-height:44px;min-width:44px;padding:0 2px;color:var(--accent);font-weight:600;font-size:14px;
+  text-decoration:underline;text-underline-offset:3px}
+
+/* ---------- Documents ---------- */
+.doc{background:var(--surface);color:var(--ink);border-radius:2px;border:1px solid var(--line-doc);
+  outline:1px solid var(--line-doc);outline-offset:-6px;box-shadow:0 3px 0 rgba(0,0,0,.28);padding:20px}
+
+/* ---------- Screen 1 ---------- */
+.s1 .stack{display:flex;flex-direction:column;align-items:center}
+.s1 .group{margin-top:16px}
+.s1 .group h2{margin-bottom:8px}
+.s1 .groups{margin-top:6px}
+
+/* ---------- Screen 2 ---------- */
+.room{display:grid;grid-template-columns:1fr 120px;gap:16px;align-items:start}
+.code{font-family:var(--mono);font-weight:500;font-size:22px;line-height:28px;letter-spacing:.06em;margin-top:6px}
+.btn-ink{margin-top:12px;height:44px;padding:0 14px;border:1px solid var(--ink);border-radius:2px;color:var(--ink);font-weight:500;font-size:16px;display:inline-flex;align-items:center}
+.qr{width:120px;height:120px;display:block}
+.region{display:flex;align-items:center;justify-content:space-between;margin:6px 0}
+.sigs-head{display:flex;justify-content:space-between}
+.sig{height:64px;display:flex;flex-direction:column;justify-content:flex-end}
+.sig-mark{height:34px;display:flex;align-items:flex-end;padding-left:10px}
+.sig-mark span{font-family:var(--hand);font-weight:600;font-size:30px;line-height:30px;display:inline-block;transform-origin:left bottom;margin-bottom:-6px}
+.sig-line{height:1px;background:var(--ink)}
+.sig-meta{display:flex;justify-content:space-between;align-items:center;height:22px;margin-top:5px}
+.sig-meta em{font-size:14px;line-height:20px;font-weight:500}
+
+/* ---------- Screen 3 ---------- */
+.verdict .title{margin-top:8px}
+.verdict hr{border:0;height:1px;background:var(--line-doc);margin:14px 0 16px}
+.exhibit{float:left;position:relative;width:165px;height:233px;
+  /* text steps around poster and seal; held to 233px so Art. II stays in one column (tuned to this copy) */
+  shape-outside:polygon(0 0,118px 0,118px 117px,165px 117px,165px 233px,0 233px)}
+.mat{width:106px;padding:4px;border:1px solid var(--ink);background:var(--surface)}
+.poster{width:96px;aspect-ratio:2/3;position:relative;overflow:hidden;
+  background:
+    radial-gradient(circle at 30% 34%,#F7B955 0 9%,rgba(247,185,85,.35) 10% 17%,transparent 18%),
+    radial-gradient(circle at 66% 22%,#F2994A 0 6%,rgba(242,153,74,.3) 7% 12%,transparent 13%),
+    radial-gradient(circle at 58% 52%,#F7C873 0 4%,rgba(247,200,115,.3) 5% 9%,transparent 10%),
+    linear-gradient(180deg,#27506A 0%,#173247 55%,#0C1A28 100%)}
+.poster::after{content:"";position:absolute;inset:auto 0 0 0;height:22%;
+  background:linear-gradient(175deg,transparent 30%,#08121C 31%)} /* hill silhouette */
+.seal{position:absolute;left:81px;top:129px;width:76px;height:76px;transform:rotate(-8deg);
+  display:grid;place-items:center}
+.seal svg{position:absolute;inset:0}
+.seal span{position:relative;color:#F2EAD3;letter-spacing:.06em;margin-right:-.06em} /* tighter than Label tracking so SETTLED fits inside the 62 px ring */.article{margin-bottom:14px}
+.article:last-child{margin-bottom:0}
+.article h2{color:var(--accent-2);margin-bottom:4px}
+.articles::after{content:"";display:block;clear:both}
+.objections{display:flex;justify-content:center;gap:28px}
+.objections li{display:flex;flex-direction:column;align-items:center;gap:6px}
+.objections i{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--accent)}
+
+/* ---------- Reveal motion ---------- */
+@media (prefers-reduced-motion: no-preference){
+  .r{animation:lineIn 300ms ease-out calc(var(--i) * 150ms) both}
+  .seal{animation:stamp 320ms cubic-bezier(.2,.9,.3,1) 1500ms both}
+  .verdict{animation:drop 120ms ease-out 1820ms}
+  @keyframes lineIn{from{opacity:0}to{opacity:1}}
+  @keyframes stamp{from{opacity:0;transform:scale(2.2) rotate(-20deg)}to{opacity:1;transform:scale(1) rotate(-8deg)}}
+  @keyframes drop{50%{transform:translateY(2px)}}
+}
+/* Veto state (not animated in the mockup): "I object" would fill the objector's circle
+   wax red on a parchment chip, and the document would be replaced by the runner-up. */
+</style>
+</head>
+<body>
+
+<header class="canvas-head">
+  <h1>05 — Signed Truce</h1>
+  <p>A mock-formal peace treaty the group signs and seals.</p>
+</header>
+
+<div class="row">
+
+<!-- ================= 1 · Quick taps ================= -->
+<section>
+  <p class="cap">1 · Quick taps</p>
+  <div class="phone s1">
+    <div class="stack">
+      <div class="wordmark" aria-label="Truce"><div class="word"><span>TRUCE</span></div><i></i></div>
+      <p class="label muted" style="margin-top:6px">Part 1 of 2</p>
+      <h1 class="display" style="margin-top:8px">Terms of engagement</h1>
+      <div class="drule" style="margin-top:8px" aria-hidden="true"></div>
+      <p class="muted center" style="margin-top:10px">State your position. Four taps, kept confidential.</p>
+    </div>
+
+    <div class="groups">
+      <div class="group">
+        <h2 class="heading">Article I · Mood</h2>
+        <div class="grid3">
+          <button class="opt" aria-pressed="false">Cosy</button>
+          <button class="opt" aria-pressed="true"><svg class="tick" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 6.2l2 2 4-4.4" fill="none" stroke="#D9B45F" stroke-width="1.6" stroke-linecap="square"/></svg>Funny</button>
+          <button class="opt" aria-pressed="false">Tense</button>
+          <button class="opt" aria-pressed="false">Moving</button>
+          <button class="opt" aria-pressed="false">Mind-bending</button>
+          <button class="opt" aria-pressed="false">Feel-good</button>
+        </div>
+      </div>
+      <div class="group">
+        <h2 class="heading">Article II · Energy</h2>
+        <div class="grid3">
+          <button class="opt" aria-pressed="false">Half asleep</button>
+          <button class="opt" aria-pressed="true"><svg class="tick" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 6.2l2 2 4-4.4" fill="none" stroke="#D9B45F" stroke-width="1.6" stroke-linecap="square"/></svg>Awake</button>
+          <button class="opt" aria-pressed="false">Wired</button>
+        </div>
+      </div>
+      <div class="group">
+        <h2 class="heading">Article III · Time</h2>
+        <div class="grid4">
+          <button class="opt" aria-pressed="false">90 min</button>
+          <button class="opt" aria-pressed="true"><svg class="tick" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 6.2l2 2 4-4.4" fill="none" stroke="#D9B45F" stroke-width="1.6" stroke-linecap="square"/></svg>2 hours</button>
+          <button class="opt" aria-pressed="false">2½ hours</button>
+          <button class="opt" aria-pressed="false">No limit</button>
+        </div>
+      </div>
+      <div class="group">
+        <h2 class="heading">Article IV · Services</h2>
+        <div class="grid3">
+          <button class="opt" aria-pressed="true"><svg class="tick" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 6.2l2 2 4-4.4" fill="none" stroke="#D9B45F" stroke-width="1.6" stroke-linecap="square"/></svg>Netflix</button>
+          <button class="opt" aria-pressed="false">Prime Video</button>
+          <button class="opt" aria-pressed="true"><svg class="tick" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 6.2l2 2 4-4.4" fill="none" stroke="#D9B45F" stroke-width="1.6" stroke-linecap="square"/></svg>Disney+</button>
+          <button class="opt" aria-pressed="false">Apple TV+</button>
+          <button class="opt" aria-pressed="false">Max</button>
+          <button class="opt" aria-pressed="false">Hulu</button>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn" style="margin-top:auto">Next: pick 3 films</button>
+  </div>
+</section>
+
+<!-- ================= 2 · Lobby ================= -->
+<section>
+  <p class="cap">2 · Lobby</p>
+  <div class="phone">
+    <div class="wordmark" aria-label="Truce"><div class="word"><span>TRUCE</span></div><i></i></div>
+    <h1 class="display" style="margin-top:14px">The parties</h1>
+    <div class="drule" style="margin:8px auto 16px" aria-hidden="true"></div>
+
+    <div class="doc">
+      <div class="room">
+        <div>
+          <p class="label">Room</p>
+          <p class="code">7KQ2M<br>X4TNP</p>
+          <button class="btn-ink">Copy invite link</button>
+        </div>
+        <svg class="qr" role="img" aria-label="QR code placeholder" viewBox="0 0 20 20" shape-rendering="crispEdges">
+          <defs>
+            <pattern id="qrp" width="7" height="7" patternUnits="userSpaceOnUse">
+              <path fill="#1A1A14" d="M0 0h1v1H0zM3 0h1v1H3zM6 0h1v1H6zM1 1h1v1H1zM4 1h2v1H4zM0 2h1v1H0zM2 2h1v1H2zM5 2h2v1H5zM1 3h1v1H1zM3 3h2v1H3zM0 4h1v1H0zM3 4h1v1H3zM6 4h1v1H6zM2 5h1v1H2zM4 5h1v1H4zM0 6h1v1H0zM3 6h1v1H3zM6 6h1v1H6z"/>
+            </pattern>
+          </defs>
+          <rect width="20" height="20" fill="url(#qrp)"/>
+          <g fill="#F2EAD3"><rect width="8" height="8"/><rect x="12" width="8" height="8"/><rect y="12" width="8" height="8"/></g>
+          <g fill="#1A1A14"><rect width="7" height="7"/><rect x="13" width="7" height="7"/><rect y="13" width="7" height="7"/></g>
+          <g fill="#F2EAD3"><rect x="1" y="1" width="5" height="5"/><rect x="14" y="1" width="5" height="5"/><rect x="1" y="14" width="5" height="5"/></g>
+          <g fill="#1A1A14"><rect x="2" y="2" width="3" height="3"/><rect x="15" y="2" width="3" height="3"/><rect x="2" y="15" width="3" height="3"/></g>
+        </svg>
+      </div>
+      <p class="small muted-ink" style="margin-top:12px">Scan to join. Nickname only, no account.</p>
+    </div>
+
+    <div class="region">
+      <p class="small muted">Streaming region: United Kingdom</p>
+      <button class="textbtn">Change</button>
+    </div>
+
+    <div class="doc" style="padding-top:18px;padding-bottom:16px">
+      <div class="sigs-head"><h2 class="label">Signatories</h2><p class="label">2 of 3 signed</p></div>
+      <ul>
+        <li class="sig">
+          <div class="sig-mark"><span style="transform:rotate(-3deg)">Sam</span></div>
+          <div class="sig-line"></div>
+          <div class="sig-meta"><span class="label">Sam · Host · You</span><span class="label muted-ink">Ready</span></div>
+        </li>
+        <li class="sig">
+          <div class="sig-mark"><span style="transform:rotate(2deg)">Leila</span></div>
+          <div class="sig-line"></div>
+          <div class="sig-meta"><span class="label">Leila</span><span class="label muted-ink">Ready</span></div>
+        </li>
+        <li class="sig">
+          <div class="sig-mark"></div>
+          <div class="sig-line"></div>
+          <div class="sig-meta"><span class="label">Omar</span><em class="muted-ink">Picking films…</em></div>
+        </li>
+      </ul>
+    </div>
+
+    <div style="margin-top:auto">
+      <button class="btn">Settle it</button>
+      <p class="small muted center" style="margin-top:8px">Two signatures are enough. Settle now or wait for Omar.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 3 · Reveal ================= -->
+<section>
+  <p class="cap">3 · Reveal <a href="">Replay reveal</a></p>
+  <div class="phone">
+    <div class="wordmark" aria-label="Truce"><div class="word"><span>TRUCE</span></div><i></i></div>
+
+    <article class="doc verdict" style="margin-top:16px">
+      <p class="label muted-ink center r" style="--i:0">It is hereby settled that tonight's film is</p>
+      <h1 class="title center r" style="--i:1">Paper Lanterns</h1>
+      <p class="label center r" style="--i:2;margin-top:6px">2019 · 1h 52m · On Netflix</p>
+      <hr>
+      <div class="articles">
+        <div class="exhibit">
+          <div class="mat"><div class="poster" role="img" aria-label="Poster for Paper Lanterns"></div></div>
+          <div class="seal" role="img" aria-label="Seal: settled">
+            <svg viewBox="0 0 76 76" aria-hidden="true">
+              <circle cx="38" cy="38" r="34" fill="#A62B1A"/>
+              <circle cx="38" cy="38" r="35" fill="none" stroke="#A62B1A" stroke-width="6" stroke-linecap="round" stroke-dasharray="0 6.872"/>
+              <circle cx="38" cy="38" r="31" fill="none" stroke="#F2EAD3" stroke-width="1"/>
+            </svg>
+            <span class="label" aria-hidden="true">Settled</span>
+          </div>
+        </div>
+        <section class="article r" style="--i:3">
+          <h2 class="label">Art. I · Sam</h2>
+          <p>You picked The Quiet Orbit. This has the same slow-burn wonder.</p>
+        </section>
+        <section class="article r" style="--i:4">
+          <h2 class="label">Art. II · Leila</h2>
+          <p>You wanted something moving. It earns its ending&nbsp;without wrecking&nbsp;you.</p>
+        </section>
+        <section class="article r" style="--i:5">
+          <h2 class="label">Art. III · Omar</h2>
+          <p>It runs 1h 52m, so you still make your early start.</p>
+        </section>
+      </div>
+    </article>
+
+    <div style="margin-top:auto">
+      <button class="btn-ghost">I object: use my veto</button>
+      <p class="small muted center" style="margin-top:8px">One objection each. The runner-up takes its place.</p>
+      <ul class="objections" aria-label="Objections left: Sam, Leila, Omar" style="margin-top:12px">
+        <li><i aria-hidden="true"></i><span class="label muted">Sam</span></li>
+        <li><i aria-hidden="true"></i><span class="label muted">Leila</span></li>
+        <li><i aria-hidden="true"></i><span class="label muted">Omar</span></li>
+      </ul>
+      <p class="muted center" style="font-size:12px;line-height:16px;margin-top:16px">Film data from TMDB · Streaming data by JustWatch</p>
+    </div>
+  </div>
+</section>
+
+</div>
+</body>
+</html>

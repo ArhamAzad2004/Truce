@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Truce · 04 Kitchen Note</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Figtree:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;1,6..72,500;1,6..72,600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F3EADB; --surface:#FCF8F0; --text:#2A2019; --muted:#6B5D50;
+  --accent:#A8401F; --accent-2:#56663A; --tape:#F2D98A; --line:#DCCFBB; --danger:#9B1C1C;
+  --serif:"Newsreader",Georgia,serif; --sans:"Figtree",system-ui,sans-serif; --mono:"Courier Prime",ui-monospace,monospace;
+  --card-shadow:0 1px 2px rgba(74,52,30,.08),0 10px 24px -10px rgba(74,52,30,.20);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+ul{list-style:none}
+button,a{font:inherit;color:inherit}
+button{background:none;border:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--text);outline-offset:2px}
+
+/* ---------- canvas ---------- */
+body{background:#DCDCD8;color:#2B2B28;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;padding:48px;overflow-x:auto}
+.canvas-head{margin-bottom:32px}
+.canvas-head .n{font-size:20px;font-weight:600;line-height:28px}
+.canvas-head .c{font-size:14px;line-height:20px;margin-top:2px}
+.row{display:flex;gap:40px;min-width:1250px}
+.col{width:390px;flex:none}
+.cap{font-size:13px;line-height:44px;height:44px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+.cap a{display:inline-flex;align-items:center;min-height:44px;padding:0 4px;color:#2B2B28;text-underline-offset:3px}
+.cap a:focus-visible{outline-color:#2B2B28}
+
+/* ---------- phone ---------- */
+.phone{width:390px;height:844px;overflow:hidden;border-radius:44px;outline:10px solid #1A1A18;background:var(--bg);
+  color:var(--text);font-family:var(--sans);font-size:16px;line-height:25px;
+  padding:20px 16px 24px;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
+
+/* ---------- type ---------- */
+.display{font-family:var(--serif);font-weight:500;font-size:36px;line-height:40px;letter-spacing:-.015em;font-optical-sizing:auto}
+.title{font-family:var(--serif);font-weight:600;font-size:28px;line-height:32px;letter-spacing:-.01em}
+.q{font-family:var(--serif);font-style:italic;font-weight:500;font-size:19px;line-height:24px}
+.body{font-size:16px;line-height:25px}
+.small{font-size:14px;line-height:20px;font-weight:500}
+.label{font-size:13px;line-height:16px;font-weight:600}
+.muted{color:var(--muted)}
+
+/* ---------- top row + wordmark ---------- */
+.top{display:flex;justify-content:space-between;align-items:center;height:44px;margin-bottom:14px}
+.wm{display:inline-flex;flex-direction:column;align-items:stretch;font-family:var(--serif);font-style:italic;font-weight:600;
+  font-size:28px;line-height:30px;letter-spacing:-.01em;color:var(--text)}
+.wm svg{display:block;width:100%;height:8px;margin-top:-1px;overflow:visible}
+.wm path{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linecap:round;vector-effect:non-scaling-stroke}
+
+/* ---------- controls ---------- */
+.group{margin-top:24px}
+.group h2{margin-bottom:10px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.chip{height:44px;border-radius:12px;border:1px solid var(--muted);background:var(--surface);color:var(--text);
+  font-size:16px;line-height:20px;font-weight:400;display:flex;align-items:center;justify-content:center;gap:5px;padding:0 4px;white-space:nowrap}
+.chip[aria-pressed="true"]{border:2px solid var(--accent);font-weight:600}
+.tick{width:14px;height:14px;flex:none;fill:none;stroke:var(--accent);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tick.ok{stroke:var(--accent-2)}
+
+.btn{display:flex;align-items:center;justify-content:center;width:100%;height:56px;border-radius:16px;background:var(--accent);
+  color:#FFFFFF;font-weight:600;font-size:16px;letter-spacing:.005em;box-shadow:0 1px 0 rgba(74,52,30,.18)}
+.btn-line{display:flex;align-items:center;justify-content:center;width:100%;height:44px;border-radius:12px;
+  border:1px solid var(--muted);background:var(--surface);font-weight:600;font-size:16px;gap:8px}
+.btn-line svg{width:16px;height:16px;fill:none;stroke:var(--text);stroke-width:1.6;stroke-linejoin:round}
+.foot{margin-top:auto}
+.foot .note{text-align:center;margin-top:8px}
+
+/* ---------- card + tape ---------- */
+.card{position:relative;background:var(--surface);border-radius:20px;box-shadow:var(--card-shadow)}
+.tape{position:absolute;top:-10px;left:50%;width:64px;height:20px;margin-left:-32px;background:var(--tape);opacity:.85;
+  transform:rotate(-3deg);border-radius:1px}
+.tape.r{transform:rotate(4deg)}
+
+/* ---------- lobby ---------- */
+.lead{margin-top:6px}
+.room{display:flex;justify-content:space-between;align-items:center;margin-top:28px}
+.sticky{width:150px;height:132px;background:var(--tape);border-radius:4px;transform:rotate(1.5deg);padding:16px 16px 0 18px;
+  box-shadow:0 1px 1px rgba(74,52,30,.10),0 8px 14px -8px rgba(74,52,30,.30)}
+.sticky .code{font-family:var(--mono);font-weight:700;font-size:24px;line-height:28px;letter-spacing:.06em;margin-top:14px}
+.qr{width:132px;height:132px;background:var(--surface);border-radius:12px;padding:12px;box-shadow:var(--card-shadow)}
+.qr svg{display:block;width:108px;height:108px;fill:var(--text)}
+.qr .f{fill:none;stroke:var(--text);stroke-width:1}
+.share{margin-top:22px}
+.region{display:flex;align-items:center;gap:2px;margin-top:4px}
+.textbtn{min-height:44px;padding:0 8px;color:var(--accent);font-weight:600;font-size:14px;text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
+.members{margin-top:26px;padding:16px 16px 4px}
+.members .hd{display:flex;justify-content:space-between;align-items:baseline;padding-bottom:10px}
+.members li{display:flex;align-items:center;gap:12px;height:52px;border-top:1px solid var(--line)}
+.av{width:36px;height:36px;border-radius:50%;border:1px solid var(--muted);display:grid;place-items:center;flex:none;
+  font-family:var(--serif);font-weight:600;font-size:18px;line-height:1;color:var(--text);background:var(--bg)}
+.who{flex:1;display:flex;align-items:baseline;gap:8px}
+.who b{font-weight:600}
+.st{display:flex;align-items:center;gap:5px}
+.ready{color:var(--accent-2)}
+
+/* ---------- reveal ---------- */
+.reveal-q{text-align:center;margin-top:4px}
+.stage{perspective:1000px;margin-top:22px}
+.flip{position:relative;transform-style:preserve-3d;transform:rotate(-1deg)}
+.face{backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.front{padding:20px 20px 6px;text-align:center}
+.back{position:absolute;inset:0;transform:rotateY(180deg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;pointer-events:none}
+.back .wm{font-size:40px;line-height:42px}
+.back .wm svg{height:10px}
+.poster{aspect-ratio:2/3;position:relative;overflow:hidden;
+  background:
+    radial-gradient(circle at 30% 34%,#F7B955 0 9%,rgba(247,185,85,.35) 10% 17%,transparent 18%),
+    radial-gradient(circle at 66% 22%,#F2994A 0 6%,rgba(242,153,74,.3) 7% 12%,transparent 13%),
+    radial-gradient(circle at 58% 52%,#F7C873 0 4%,rgba(247,200,115,.3) 5% 9%,transparent 10%),
+    linear-gradient(180deg,#27506A 0%,#173247 55%,#0C1A28 100%)}
+.poster::after{content:"";position:absolute;inset:auto 0 0 0;height:22%;
+  background:linear-gradient(175deg,transparent 30%,#08121C 31%)}
+.front .poster{width:128px;margin:6px auto 0;border-radius:10px;box-shadow:0 6px 14px -8px rgba(12,26,40,.5)}
+.front h1{margin-top:14px}
+.meta{margin-top:6px;display:flex;justify-content:center;align-items:center;gap:6px}
+.tag{font-size:13px;line-height:16px;font-weight:600;color:var(--accent-2);border:1px solid var(--accent-2);border-radius:8px;padding:2px 8px}
+.reasons{margin-top:14px;text-align:left}
+.reasons li{border-top:1px solid var(--line);padding:11px 0 12px}
+.reasons .nick{font-family:var(--serif);font-style:italic;font-weight:500;font-size:19px;line-height:24px;color:var(--accent)}
+.veto{margin-top:24px}
+.veto .btn-line{height:48px;border-radius:14px;color:var(--text)}
+.veto .note{text-align:center;margin-top:8px}
+.tokens{display:flex;justify-content:center;align-items:center;gap:8px;margin-top:10px}
+.tokens .label{margin-right:4px}
+.tok{width:24px;height:24px;border-radius:50%;border:1px solid var(--muted);display:grid;place-items:center;
+  font-family:var(--serif);font-weight:600;font-size:13px;line-height:1;background:var(--surface)}
+.attr{font-size:12px;line-height:16px;color:var(--muted);text-align:center;margin-top:auto}
+
+/* ---------- motion ---------- */
+@media (prefers-reduced-motion:no-preference){
+  .flip{animation:flip 700ms cubic-bezier(.3,.7,.2,1) 500ms both}
+  .reasons li{animation:rise 250ms ease-out both}
+  .reasons li:nth-child(1){animation-delay:1250ms}
+  .reasons li:nth-child(2){animation-delay:1350ms}
+  .reasons li:nth-child(3){animation-delay:1450ms}
+}
+@keyframes flip{from{transform:rotate(-1deg) rotateY(180deg)}to{transform:rotate(-1deg) rotateY(0)}}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+/* Reduced motion: opacity-only cross-fade from back to front, reasons already in place. */
+@media (prefers-reduced-motion:reduce){
+  .back{animation:backfade 200ms linear 500ms both}
+  .front{animation:frontfade 200ms linear 500ms both}
+}
+@keyframes backfade{from{opacity:1;transform:none}to{opacity:0;transform:none}}
+@keyframes frontfade{from{opacity:0}to{opacity:1}}
+</style>
+</head>
+<body>
+
+<header class="canvas-head">
+  <p class="n">04 — Kitchen Note</p>
+  <p class="c">A friend's note taped to the fridge.</p>
+</header>
+
+<div class="row">
+
+<!-- ================= 1 · Quick taps ================= -->
+<section class="col" aria-label="Screen 1, Quick taps">
+  <div class="cap"><span>1 · Quick taps</span></div>
+  <div class="phone">
+    <div class="top">
+      <span class="wm">Truce<svg viewBox="0 0 80 8" preserveAspectRatio="none" aria-hidden="true"><path d="M2 5 C 18 1, 30 7, 44 4 S 70 2, 78 5"/></svg></span>
+      <span class="label muted">Step 1 of 2</span>
+    </div>
+    <h1 class="display">Hi Sam. How’s tonight looking?</h1>
+    <p class="body muted lead">Four quick taps. Only you can see them.</p>
+
+    <div class="group">
+      <h2 class="q">What mood are you in?</h2>
+      <div class="grid3">
+        <button class="chip" aria-pressed="false">Cosy</button>
+        <button class="chip" aria-pressed="true"><svg class="tick" viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 7.5l3 3 6-7"/></svg>Funny</button>
+        <button class="chip" aria-pressed="false">Tense</button>
+        <button class="chip" aria-pressed="false">Moving</button>
+        <button class="chip" aria-pressed="false">Mind-bending</button>
+        <button class="chip" aria-pressed="false">Feel-good</button>
+      </div>
+    </div>
+    <div class="group">
+      <h2 class="q">How much energy have you got?</h2>
+      <div class="grid3">
+        <button class="chip" aria-pressed="false">Half asleep</button>
+        <button class="chip" aria-pressed="true"><svg class="tick" viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 7.5l3 3 6-7"/></svg>Awake</button>
+        <button class="chip" aria-pressed="false">Wired</button>
+      </div>
+    </div>
+    <div class="group">
+      <h2 class="q">How long have you got?</h2>
+      <div class="grid4">
+        <button class="chip" aria-pressed="false">90 min</button>
+        <button class="chip" aria-pressed="true"><svg class="tick" viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 7.5l3 3 6-7"/></svg>2 hours</button>
+        <button class="chip" aria-pressed="false">2½ hours</button>
+        <button class="chip" aria-pressed="false">No limit</button>
+      </div>
+    </div>
+    <div class="group">
+      <h2 class="q">What can you watch on?</h2>
+      <div class="grid3">
+        <button class="chip" aria-pressed="true"><svg class="tick" viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 7.5l3 3 6-7"/></svg>Netflix</button>
+        <button class="chip" aria-pressed="false">Prime Video</button>
+        <button class="chip" aria-pressed="true"><svg class="tick" viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 7.5l3 3 6-7"/></svg>Disney+</button>
+        <button class="chip" aria-pressed="false">Apple TV+</button>
+        <button class="chip" aria-pressed="false">Max</button>
+        <button class="chip" aria-pressed="false">Hulu</button>
+      </div>
+    </div>
+
+    <div class="foot"><button class="btn">Next: pick 3 films</button></div>
+  </div>
+</section>
+
+<!-- ================= 2 · Lobby ================= -->
+<section class="col" aria-label="Screen 2, Lobby">
+  <div class="cap"><span>2 · Lobby</span></div>
+  <div class="phone">
+    <div class="top">
+      <span class="wm">Truce<svg viewBox="0 0 80 8" preserveAspectRatio="none" aria-hidden="true"><path d="M2 5 C 18 1, 30 7, 44 4 S 70 2, 78 5"/></svg></span>
+      <span class="label muted">You’re hosting</span>
+    </div>
+    <h1 class="display">Get everyone in.</h1>
+    <p class="body muted lead">Share the code or let them scan. Nickname only, no sign-up.</p>
+
+    <div class="room">
+      <div class="sticky">
+        <p class="label">Room code</p>
+        <p class="code">7KQ2M<br>X4TNP</p>
+      </div>
+      <div class="qr" role="img" aria-label="QR code placeholder">
+        <svg viewBox="0 0 21 21" aria-hidden="true">
+          <path d="M8 0h1v1h-1zM10 0h1v1h-1zM11 0h1v1h-1zM9 1h1v1h-1zM11 2h1v1h-1zM12 2h1v1h-1zM10 3h1v1h-1zM10 4h1v1h-1zM8 6h1v1h-1zM9 6h1v1h-1zM11 6h1v1h-1zM12 6h1v1h-1zM8 7h1v1h-1zM10 7h1v1h-1zM2 8h1v1h-1zM3 8h1v1h-1zM7 8h1v1h-1zM9 8h1v1h-1zM10 8h1v1h-1zM11 8h1v1h-1zM15 8h1v1h-1zM16 8h1v1h-1zM17 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM2 9h1v1h-1zM12 9h1v1h-1zM14 9h1v1h-1zM16 9h1v1h-1zM17 9h1v1h-1zM18 9h1v1h-1zM0 10h1v1h-1zM2 10h1v1h-1zM3 10h1v1h-1zM4 10h1v1h-1zM5 10h1v1h-1zM7 10h1v1h-1zM9 10h1v1h-1zM12 10h1v1h-1zM19 10h1v1h-1zM20 10h1v1h-1zM0 11h1v1h-1zM1 11h1v1h-1zM2 11h1v1h-1zM4 11h1v1h-1zM8 11h1v1h-1zM10 11h1v1h-1zM11 11h1v1h-1zM13 11h1v1h-1zM15 11h1v1h-1zM19 11h1v1h-1zM0 12h1v1h-1zM4 12h1v1h-1zM5 12h1v1h-1zM6 12h1v1h-1zM8 12h1v1h-1zM13 12h1v1h-1zM14 12h1v1h-1zM16 12h1v1h-1zM19 12h1v1h-1zM12 13h1v1h-1zM13 13h1v1h-1zM16 13h1v1h-1zM17 13h1v1h-1zM18 13h1v1h-1zM8 14h1v1h-1zM11 14h1v1h-1zM14 14h1v1h-1zM15 14h1v1h-1zM8 15h1v1h-1zM10 15h1v1h-1zM16 15h1v1h-1zM18 15h1v1h-1zM11 16h1v1h-1zM13 16h1v1h-1zM14 16h1v1h-1zM16 16h1v1h-1zM18 16h1v1h-1zM19 16h1v1h-1zM9 17h1v1h-1zM16 17h1v1h-1zM8 18h1v1h-1zM9 18h1v1h-1zM10 18h1v1h-1zM11 18h1v1h-1zM12 18h1v1h-1zM13 18h1v1h-1zM16 18h1v1h-1zM17 18h1v1h-1zM18 18h1v1h-1zM20 18h1v1h-1zM13 19h1v1h-1zM14 19h1v1h-1zM15 19h1v1h-1zM16 19h1v1h-1zM19 19h1v1h-1zM9 20h1v1h-1zM10 20h1v1h-1zM12 20h1v1h-1zM13 20h1v1h-1zM14 20h1v1h-1zM19 20h1v1h-1zM20 20h1v1h-1z"/>
+          <rect class="f" x=".5" y=".5" width="6" height="6" rx="1.8"/><rect x="2" y="2" width="3" height="3" rx=".9"/>
+          <rect class="f" x="14.5" y=".5" width="6" height="6" rx="1.8"/><rect x="16" y="2" width="3" height="3" rx=".9"/>
+          <rect class="f" x=".5" y="14.5" width="6" height="6" rx="1.8"/><rect x="2" y="16" width="3" height="3" rx=".9"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="share">
+      <button class="btn-line"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="2"/><path d="M10.5 3.5v-.5a1.5 1.5 0 0 0-1.5-1.5H4A1.5 1.5 0 0 0 2.5 3v5A1.5 1.5 0 0 0 4 9.5h.5"/></svg>Copy invite link</button>
+      <p class="region small muted">Streaming region: United Kingdom <button class="textbtn">Change</button></p>
+    </div>
+
+    <div class="card members">
+      <span class="tape r" aria-hidden="true"></span>
+      <div class="hd"><h2 class="label">Who’s here</h2><span class="label ready">2 of 3 ready</span></div>
+      <ul>
+        <li><span class="av" aria-hidden="true">S</span><span class="who"><b>Sam</b><span class="small muted">host · you</span></span>
+          <span class="st small ready"><svg class="tick ok" viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 7.5l3 3 6-7"/></svg>Ready</span></li>
+        <li><span class="av" aria-hidden="true">L</span><span class="who"><b>Leila</b></span>
+          <span class="st small ready"><svg class="tick ok" viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 7.5l3 3 6-7"/></svg>Ready</span></li>
+        <li><span class="av" aria-hidden="true">O</span><span class="who"><b>Omar</b></span>
+          <span class="st small muted">Picking films…</span></li>
+      </ul>
+    </div>
+
+    <div class="foot">
+      <button class="btn">Settle it</button>
+      <p class="small muted note">Two are ready. Settle now or wait for Omar.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 3 · Reveal ================= -->
+<section class="col" aria-label="Screen 3, Reveal">
+  <div class="cap"><span>3 · Reveal</span><a href="">Replay reveal</a></div>
+  <div class="phone">
+    <div class="top">
+      <span class="wm">Truce<svg viewBox="0 0 80 8" preserveAspectRatio="none" aria-hidden="true"><path d="M2 5 C 18 1, 30 7, 44 4 S 70 2, 78 5"/></svg></span>
+    </div>
+    <p class="q reveal-q">Tonight you’re watching</p>
+
+    <div class="stage">
+      <div class="flip">
+        <div class="card face front">
+          <span class="tape" aria-hidden="true"></span>
+          <div class="poster" aria-hidden="true"></div>
+          <h1 class="title">Paper Lanterns</h1>
+          <p class="small muted meta">2019 · 1h 52m · <span class="tag">On Netflix</span></p>
+          <ul class="reasons body">
+            <li><span class="nick">Sam,</span> you picked The Quiet Orbit. This has the same slow-burn wonder.</li>
+            <li><span class="nick">Leila,</span> you wanted something moving. It earns its ending without wrecking you.</li>
+            <li><span class="nick">Omar,</span> it runs 1h 52m, so you still make your early start.</li>
+          </ul>
+        </div>
+        <div class="card face back" aria-hidden="true">
+          <span class="wm">Truce<svg viewBox="0 0 80 8" preserveAspectRatio="none"><path d="M2 5 C 18 1, 30 7, 44 4 S 70 2, 78 5"/></svg></span>
+          <p class="q muted">Tonight’s film is…</p>
+        </div>
+      </div>
+    </div>
+    <!-- Veto (not shown): the card flips back face-down, then turns over again on the runner-up. A used veto fills that person's circle. -->
+    <div class="veto">
+      <button class="btn-line">Not for me — use my veto</button>
+      <p class="small muted note">Everyone gets one. You’ll see the runner-up.</p>
+      <div class="tokens">
+        <span class="label muted">Vetoes left</span>
+        <span class="tok" aria-label="Sam">S</span><span class="tok" aria-label="Leila">L</span><span class="tok" aria-label="Omar">O</span>
+      </div>
+    </div>
+    <p class="attr">Film data from TMDB · Streaming data by JustWatch</p>
+  </div>
+</section>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Truce mockups</title>
+<style>
+  :root { --bg:#f2f2f0; --ink:#161616; --muted:#5f5f5c; --line:#d9d9d5; --sel:#161616; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif; }
+  header { position:sticky; top:0; z-index:2; background:var(--bg); border-bottom:1px solid var(--line); padding:16px 24px; display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; }
+  h1 { font-size:17px; margin:0 12px 0 0; letter-spacing:-.01em; }
+  nav { display:flex; flex-wrap:wrap; gap:6px; }
+  button { font:inherit; min-height:44px; padding:0 14px; border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; cursor:pointer; }
+  button[aria-pressed="true"] { background:var(--sel); color:#fff; border-color:var(--sel); }
+  button:focus-visible { outline:2px solid #1a5cff; outline-offset:2px; }
+  .hint { color:var(--muted); font-size:13px; margin-left:auto; }
+  iframe { display:block; width:100%; height:calc(100vh - 77px); border:0; background:#fff; }
+  a { color:inherit; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Truce · 5 directions</h1>
+  <nav aria-label="Design directions"></nav>
+  <span class="hint">Keys 1–5 switch · <a id="open" href="#" target="_blank">open alone ↗</a></span>
+</header>
+<iframe title="Mockup" id="view"></iframe>
+<script>
+  const dirs = [
+    ["01-torn-stub", "01 Torn Stub"],
+    ["02-programme-notes", "02 Programme Notes"],
+    ["03-house-lights", "03 House Lights"],
+    ["04-kitchen-note", "04 Kitchen Note"],
+    ["05-signed-truce", "05 Signed Truce"],
+  ];
+  const nav = document.querySelector("nav"), view = document.getElementById("view"), open = document.getElementById("open");
+  function show(i) {
+    view.src = dirs[i][0] + "/index.html";
+    open.href = view.src;
+    nav.querySelectorAll("button").forEach((b, j) => b.setAttribute("aria-pressed", i === j));
+    history.replaceState(null, "", "#" + (i + 1));
+  }
+  dirs.forEach(([, label], i) => {
+    const b = document.createElement("button");
+    b.textContent = label;
+    b.onclick = () => show(i);
+    nav.append(b);
+  });
+  addEventListener("keydown", e => { const n = +e.key; if (n >= 1 && n <= 5) show(n - 1); });
+  show(Math.min(Math.max((+location.hash.slice(1) || 1) - 1, 0), 4));
+</script>
+</body>
+</html>
