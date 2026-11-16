@@ -2,7 +2,9 @@
 .muted { color: var(--muted); }
 
 .group { min-width: 0; margin: 0; border: 0; }
-.group legend { width: 100%; padding: 0; }
+/* A legend normally sits on the fieldset's top border, outside its padding; floating it keeps it inside. */
+.group legend { float: left; width: 100%; padding: 0; }
+.group legend + * { clear: both; }
 .group-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: var(--s3); font-weight: 600; }
 .group-head small { color: var(--ink-muted); font-size: 14px; font-weight: 400; }
 
@@ -17,7 +19,8 @@
 .chip:has(input:checked)::before { content: "✓"; color: var(--amber); }
 .chip:has(input:focus-visible) { outline: 2px solid var(--ink); outline-offset: 2px; }
 
-.slots, .results { display: grid; gap: var(--s3); margin: 0; padding-left: 0; list-style: none; }
+.slots, .results { display: grid; gap: var(--s3); margin: 0; list-style: none; }
+.results { padding-left: 0; } /* the slots keep the ticket section's padding */
 .slots { padding-bottom: var(--s5); }
 .slot, .result { display: flex; align-items: center; gap: var(--s3); min-height: 60px; }
 .slot-empty .poster { border: 1.5px dashed var(--perf); background: none; }

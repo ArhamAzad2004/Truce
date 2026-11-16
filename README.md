@@ -4,6 +4,19 @@
 
 **Live:** https://truce.arhamazad2004.workers.dev
 
+<table>
+  <tr>
+    <td align="center"><img src="docs/screenshots/1-landing.png" width="240" alt="Landing: Movie night, settled."><br><sub>Open a room</sub></td>
+    <td align="center"><img src="docs/screenshots/2-invite.png" width="240" alt="Lobby with the room number, invite link and QR code"><br><sub>Share the link or QR code</sub></td>
+    <td align="center"><img src="docs/screenshots/3-quick-taps.png" width="240" alt="Quick taps: mood, energy, time and services"><br><sub>Four quick taps</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/4-favourites.png" width="240" alt="Favourites: search and pick three films"><br><sub>Three films you love</sub></td>
+    <td align="center"><img src="docs/screenshots/5-lobby-ready.png" width="240" alt="Lobby seats with ready stamps and the Settle it button"><br><sub>Wait for the group</sub></td>
+    <td align="center"><img src="docs/screenshots/6-reveal.png" width="240" alt="Reveal: one film with a reason for each person and a veto"><br><sub>One pick, one veto each</sub></td>
+  </tr>
+</table>
+
 ## How it works
 
 1. The host opens a room and shares the link or QR code. No accounts.
