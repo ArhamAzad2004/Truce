@@ -21,9 +21,9 @@ Full reasoning goes in `DECISIONS.md` (Phase 2).
 ### Phase 0 — Repo cleanup and Claude setup · Opus 5.5
 - [x] Remove the old Python prototype (`env/`, `main.py`); add `.gitignore`.
 - [x] `CLAUDE.md`, `.claude/settings.json`, `.mcp.json` (Cloudflare docs MCP, URL verified), `docs/SETUP.md`, stub `README.md`.
-- [ ] `LICENSE` (all rights reserved), once the copyright holder name is confirmed.
-- [ ] Rename the GitHub repo to Truce and update the remote.
-- [ ] With the owner's OK: delete stale remote `main`, rename `master` → `main`.
+- [x] `LICENSE` (all rights reserved).
+- [x] Rename the GitHub repo to Truce and update the remote.
+- [x] Delete stale remote `main`, rename `master` → `main` (owner approved).
 - **Done when:** under 15 tracked files, no secrets tracked, a fresh clone opens in Claude Code without prompts for read/run commands.
 
 ### Phase 1 — Design exploration and choice · Fable 5.2 direction, Opus 5.5 mockups
