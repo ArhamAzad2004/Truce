@@ -70,7 +70,8 @@ type PublicState = {
   notice?: Room["notice"];
   pick?: { movieId: string; title: string; year: number; poster: string | null;
            runtime: number; services: Service[]; reasons: Record<string, string> };  // ranking[index] only
-  exhausted?: boolean;          // true when every streamable candidate has been vetoed
+  vetoedBy?: string;            // member id of the latest veto
+  exhausted?: boolean;          // true when every streamable candidate has been vetoed; `pick` is then absent
 };
 ```
 
@@ -303,4 +304,4 @@ Fail → one retry with the validation error appended, inside the shared deadlin
 
 - **Fallback ranking:** `C` in score order, `source: "fallback"`. Used when the AI step fails, and when `AI_API_KEY` is not set. No error is shown.
 - **Template reasons** are built from real overlap data, in this order of preference: shared director ("From the director of *{favourite}*.") → shared genre with one of the member's favourites ("Like *{favourite}*, it's a {genre}.") → mood match ("You asked for {mood}; this is that.") → practical fit ("On {service} and inside your {time}."). Favourite titles come from MOTN, not from user typing.
-- **Veto:** records `{memberId, movieId}`, sets `vetoUsed`, increments `index`. If `ranking[index]` does not exist, the next film from `pool` is appended with template reasons. If `pool` is empty, `exhausted = true` and the UI shows "That's everything you can all stream." with the host's **Back to the lobby** (`reopen`). No film appears twice. A veto never calls MOTN or the AI.
+- **Veto:** allowed for members who have a reason on the current pick (others get `WRONG_PHASE`; a second veto gets `VETO_USED`). Records `{memberId, movieId}`, sets `vetoUsed`, increments `index`. If `ranking[index]` does not exist, the next film from `pool` is appended with template reasons. If `pool` is empty, `exhausted = true` and the UI shows "That's everything you can all stream." with the host's **Back to the lobby** (`reopen`). No film appears twice. A veto never calls MOTN or the AI.

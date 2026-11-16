@@ -5,7 +5,8 @@ import type { CandidateQuery } from "../worker/motn";
 import { parseCandidates } from "../worker/motn";
 import { type Fetch, type Voter, pick, reason } from "../worker/pick";
 import { createRoom, join } from "./helpers";
-import { exports } from "cloudflare:workers";
+import { runInDurableObject } from "cloudflare:test";
+import { env, exports } from "cloudflare:workers";
 
 const netflix = { id: "netflix", name: "Netflix" };
 const prime = { id: "prime", name: "Prime Video" };
@@ -162,5 +163,62 @@ describe("settle", () => {
     const lobby = await untilPhase(watcher, "lobby");
     expect(lobby.pick).toBeUndefined();
     expect(lobby.members.every((m) => !m.ready)).toBe(true);
+  });
+});
+
+describe("veto", () => {
+  it("gives each voter one veto, moves to a new film each time, and ends cleanly when the list runs out", async () => {
+    const { code, hostToken } = await createRoom();
+    const host = await join(code, "Sam", hostToken);
+    const guest = await join(code, "Noor");
+    const watcher = await join(code, "Leila"); // not part of the pick
+    for (const [member, q] of [[host, "godfather"], [guest, "paddington"]] as const) {
+      const res = await exports.default.fetch(`http://truce.test/api/search?q=${q}`);
+      member.send({ type: "setAnswers", mood: "funny", energy: "awake", maxMinutes: null, serviceIds: ["netflix", "prime"] });
+      member.send({ type: "setFavourites", ids: ((await res.json()) as { id: string }[]).map((f) => f.id) });
+      member.send({ type: "setReady", ready: true });
+    }
+    const resultState = async () => {
+      for (;;) { const msg = await watcher.until("state"); if (msg.state.phase === "result") return msg.state; }
+    };
+
+    guest.send({ type: "veto" });
+    expect(await guest.until("error")).toEqual({ type: "error", code: "WRONG_PHASE" }); // nothing to veto yet
+
+    host.send({ type: "settle" });
+    const first = await resultState();
+    watcher.send({ type: "veto" });
+    expect(await watcher.until("error")).toEqual({ type: "error", code: "WRONG_PHASE" }); // no reason, no veto
+
+    guest.send({ type: "veto" });
+    const second = await resultState();
+    expect(second.pick!.movieId).not.toBe(first.pick!.movieId);
+    expect(second.vetoedBy).toBe(guest.welcome.memberId);
+    expect(second.members.find((m) => m.id === guest.welcome.memberId)?.vetoUsed).toBe(true);
+    expect(Object.keys(second.pick!.reasons).sort()).toEqual(Object.keys(first.pick!.reasons).sort());
+
+    guest.send({ type: "veto" });
+    expect(await guest.until("error")).toEqual({ type: "error", code: "VETO_USED" });
+
+    // Leave nothing after the current film, then spend the last veto.
+    await runInDurableObject(env.ROOM.getByName(code), (_room, state) => {
+      const room = state.storage.kv.get<{ result: { ranking: unknown[]; index: number; pool: unknown[] } }>("room")!;
+      room.result.ranking.length = room.result.index + 1;
+      room.result.pool = [];
+      state.storage.kv.put("room", room);
+    });
+    host.send({ type: "veto" });
+    const end = await resultState();
+    expect(end.exhausted).toBe(true);
+    expect(end.pick).toBeUndefined();
+
+    host.send({ type: "reopen" });
+    for (;;) {
+      const msg = await watcher.until("state");
+      if (msg.state.phase !== "lobby") continue;
+      expect(msg.state.members.some((m) => m.vetoUsed)).toBe(false);
+      expect(msg.state.exhausted).toBeUndefined();
+      break;
+    }
   });
 });

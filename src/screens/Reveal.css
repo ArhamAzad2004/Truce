@@ -21,3 +21,10 @@
   .settling .slot-bar { animation: slot-wait 1200ms ease-in-out infinite alternate; }
   @keyframes slot-wait { from { opacity: .45; } }
 }
+
+/* The veto stub: the only place oxblood appears (DESIGN_BRIEF §03). */
+.veto-stub { border-bottom: 3px solid var(--red); border-radius: 0 0 14px 14px; }
+.tokens { display: flex; flex-wrap: wrap; gap: var(--s2); margin: var(--s2) 0 0; padding: 0; list-style: none; }
+.token { padding: 4px 10px; border-radius: 4px; background: var(--stock-dim); font-size: 14px; line-height: 20px; }
+.token-used { color: var(--ink-muted); text-decoration: line-through; }
+.token-used .label { display: inline-block; text-decoration: none; }

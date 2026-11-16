@@ -36,7 +36,12 @@ export function Room({ code, go }: { code: string; go: (to: string) => void }) {
       // The room's phase wins over whatever this person was doing: everyone sees the pick together.
       if (room.state.phase === "settling") return <Settling />;
       if (room.state.phase === "result") {
-        return <Reveal state={room.state} memberId={room.memberId} you={room.you} onReopen={() => room.send({ type: "reopen" })} />;
+        return (
+          <Reveal
+            state={room.state} memberId={room.memberId} you={room.you}
+            onVeto={() => room.send({ type: "veto" })} onReopen={() => room.send({ type: "reopen" })}
+          />
+        );
       }
       if (view === "taps") {
         return (

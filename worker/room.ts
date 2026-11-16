@@ -6,7 +6,7 @@ import {
 } from "../shared/protocol";
 import type { Fail } from "./catalog";
 import type { Countries } from "./motn";
-import { type Ranked, type Voter, pick } from "./pick";
+import { type Ranked, type Voter, pick, withReasons } from "./pick";
 import { rank } from "./pick/ai";
 
 type Member = {
@@ -149,6 +149,7 @@ export class Room extends DurableObject<Env> {
     if (msg.type === "ping") return this.send(ws, { type: "pong" });
     if (msg.type === "settle") return this.settle(ws, att.memberId);
     if (msg.type === "reopen") return this.reopen(ws, att.memberId);
+    if (msg.type === "veto") return this.veto(ws, att.memberId);
 
     // Catalog lookups come first: nothing may await between loading the room and saving it.
     let countries: Countries | undefined;
@@ -255,6 +256,36 @@ export class Room extends DurableObject<Env> {
     this.broadcast(after);
   }
 
+  /** One veto each: move to the next film. Never calls the listings or the AI, and no film appears twice. */
+  private veto(ws: WebSocket, memberId: string) {
+    const refuse = (code: ErrorCode) => this.send(ws, { type: "error", code });
+    const room = this.load()!;
+    const result = room.result;
+    const current = result?.ranking[result.index];
+    // Only people the pick was made for hold a veto.
+    if (room.phase !== "result" || !result || !current || !(memberId in current.reasons)) return refuse("WRONG_PHASE");
+    const me = room.members[memberId];
+    if (me.vetoUsed) return refuse("VETO_USED");
+
+    me.vetoUsed = true;
+    result.vetoes.push({ memberId, movieId: current.movieId });
+    result.index += 1;
+    if (!result.ranking[result.index]) {
+      const next = result.pool.shift();
+      if (next) {
+        const voters: Voter[] = Object.keys(current.reasons).flatMap((id) => {
+          const m = room.members[id];
+          return m?.answers ? [{ id, answers: m.answers, favourites: m.favourites }] : [];
+        });
+        result.ranking.push(withReasons(next, voters));
+      } else {
+        result.exhausted = true;
+      }
+    }
+    this.save(room);
+    this.broadcast(room);
+  }
+
   /** Host only: back to the lobby after a result. Answers and films stay; ready stamps and vetoes are cleared. */
   private reopen(ws: WebSocket, memberId: string) {
     const room = this.load()!;
@@ -357,6 +388,7 @@ export class Room extends DurableObject<Env> {
         movieId: pick.movieId, title: pick.title, year: pick.year, poster: pick.poster,
         runtime: pick.runtime, services: pick.services, reasons: pick.reasons,
       },
+      vetoedBy: room.result?.vetoes.at(-1)?.memberId,
       exhausted: room.result?.exhausted || undefined,
     };
   }

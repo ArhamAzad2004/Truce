@@ -21,29 +21,53 @@ const runtime = (minutes: number) => {
   return h ? (m ? `${h} h ${m} min` : `${h} h`) : `${m} min`;
 };
 
-type Props = { state: PublicState; memberId: string | null; you: You; onReopen: () => void };
-
-export function Reveal({ state, memberId, you, onReopen }: Props) {
+function Poster({ src, title }: { src: string | null; title: string }) {
   const [broken, setBroken] = useState(false);
+  return src && !broken
+    ? <img className="pick-poster" src={src} alt="" referrerPolicy="no-referrer" onError={() => setBroken(true)} />
+    : <span className="pick-poster pick-poster-blank" aria-hidden="true">{title}</span>;
+}
+
+type Props = { state: PublicState; memberId: string | null; you: You; onVeto: () => void; onReopen: () => void };
+
+export function Reveal({ state, memberId, you, onVeto, onReopen }: Props) {
   const pick = state.pick;
-  if (!pick) return null;
   const isHost = memberId !== null && memberId === state.hostId;
+  const tearer = state.members.find((m) => m.id === state.vetoedBy)?.nickname;
+
+  // Every streamable film has been vetoed: the way out is the host's lobby.
+  if (!pick) {
+    return (
+      <main className="screen">
+        <header className="screen-head"><span className="wordmark" aria-label="Truce">TRUCE</span></header>
+        <h1 className="title">That's everything you can all stream.</h1>
+        {isHost
+          ? <button className="btn btn-primary" type="button" onClick={onReopen}>Back to the lobby</button>
+          : <p className="muted">The host can reopen the lobby so you can loosen a filter.</p>}
+      </main>
+    );
+  }
+
+  // The people the pick was made for: each has a reason and one veto.
+  const voters = state.members.filter((m) => pick.reasons[m.id]);
+  const mine = voters.find((m) => m.id === memberId);
+  const vetoesLeft = voters.filter((m) => !m.vetoUsed).length;
   // Lead with a service this person actually has.
   const service = pick.services.find((s) => you.answers?.serviceIds.includes(s.id)) ?? pick.services[0];
-  const reasons = state.members.filter((m) => pick.reasons[m.id]);
 
   return (
     <main className="screen">
       <header className="screen-head">
         <span className="wordmark" aria-label="Truce">TRUCE</span>
-        <span className="label">Admit {reasons.length} · Tonight</span>
+        <span className="label">Admit {voters.length} · Tonight</span>
       </header>
 
-      <article className="ticket reveal" aria-labelledby="pick-title">
+      <p className="note" role="status">{tearer && `${tearer} tore it up. Here's the runner-up.`}</p>
+
+      {/* Keyed by film, so a runner-up arrives as a new ticket. */}
+      <article key={pick.movieId} className="ticket reveal" aria-labelledby="pick-title">
         <div className="ticket-section pick">
-          {pick.poster && !broken
-            ? <img className="pick-poster" src={pick.poster} alt="" referrerPolicy="no-referrer" onError={() => setBroken(true)} />
-            : <span className="pick-poster pick-poster-blank" aria-hidden="true">{pick.title}</span>}
+          <Poster src={pick.poster} title={pick.title} />
           <div className="pick-text">
             <h1 id="pick-title" className="pick-title">{pick.title}</h1>
             <p className="ink-muted">{pick.year} · {runtime(pick.runtime)}</p>
@@ -56,10 +80,37 @@ export function Reveal({ state, memberId, you, onReopen }: Props) {
         <div className="ticket-section stack">
           <h2 className="label ink-muted">Why this one</h2>
           <ul className="reasons">
-            {reasons.map((m) => (
+            {voters.map((m) => (
               <li key={m.id}><strong>{m.nickname}:</strong> {pick.reasons[m.id]}</li>
             ))}
           </ul>
+        </div>
+
+        <div className="perf" aria-hidden="true" />
+
+        <div className="ticket-section stack veto-stub">
+          {vetoesLeft === 0 ? (
+            <p>No vetoes left. This is tonight's film.</p>
+          ) : mine && !mine.vetoUsed ? (
+            <>
+              <button className="btn btn-ghost" type="button" onClick={onVeto}>Tear it up and use my veto</button>
+              <p className="hint">One veto each. Tearing shows the runner-up.</p>
+            </>
+          ) : mine ? (
+            <p>You've used your veto.</p>
+          ) : (
+            <p className="hint">You joined after the pick, so you have no veto this round.</p>
+          )}
+          <div>
+            <h2 className="label ink-muted">Vetoes left</h2>
+            <ul className="tokens">
+              {voters.map((m) => (
+                <li key={m.id} className={m.vetoUsed ? "token token-used" : "token"}>
+                  {m.nickname}{m.vetoUsed && <span className="label"> used</span>}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </article>
 

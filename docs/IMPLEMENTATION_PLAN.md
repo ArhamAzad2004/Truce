@@ -88,7 +88,7 @@ Full reasoning goes in `DECISIONS.md` (Phase 2).
 - **Done when:** valid AI ranking replaces the deterministic one; every failure silently yields the Phase 6 result; provider switch is env-only.
 
 ### Phase 8 — Slice 6: veto and edge states · Opus 5.5, Fable 5.2 review
-- [ ] One veto per member → runner-up; host `reopen`; empty states (no candidates, list exhausted, quota reached / "Truce is resting", host disconnected with token resume, expired room, reconnect backoff).
+- [x] One veto per member → runner-up; host `reopen`; empty states (no candidates, list exhausted, quota reached / "Truce is resting", host disconnected with token resume, expired room, reconnect backoff).
 - **Done when:** each member can veto once, no film repeats, no dead-end screen.
 
 ### Phase 9 — Hardening · Fable 5.2
