@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(npm test*)",
+      "Bash(npx wrangler dev*)",
+      "Bash(npx wrangler types*)",
+      "Bash(npx vitest*)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(gh repo view*)",
+      "Bash(gh pr view*)",
+      "Bash(gh pr list*)",
+      "Bash(gh run view*)",
+      "Bash(gh run list*)"
+    ],
+    "ask": [
+      "Bash(npm install*)",
+      "Bash(npx wrangler deploy*)",
+      "Bash(npx wrangler secret*)",
+      "Bash(git push*)"
+    ],
+    "deny": [
+      "Read(./.dev.vars*)",
+      "Read(./.env*)",
+      "Bash(npx wrangler delete*)"
+    ]
+  }
+}

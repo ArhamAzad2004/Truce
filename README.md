@@ -1,16 +1,20 @@
-# AI Movie Guide
+# Truce
 
-AI Movie Guide is a Python-based application that uses OpenAI's GPT-3.5-turbo model to process user queries and fetches movie data from The Movie Database (TMDb) based on the determined intent.
+**Movie night, settled.** Everyone joins from their phone, taps a few answers and names 3 films they love. Truce picks the one film the whole group can stream tonight, and tells each person why it fits them.
 
-## Features
+> Work in progress. The old Python prototype has been retired; the rebuild plan is in [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md).
 
-- Analyze user queries for movie recommendations.
-- Fetch movie data from TMDb based on genre, trending, or search queries.
-- Display top 5 movie results based on the query.
+## How it will work
+1. The host opens a room and shares a link or QR code.
+2. Each person joins with a nickname (no account), picks their mood, time and streaming services, and 3 favourite films.
+3. Truce shortlists films that are streamable in your region and fit everyone's time, ranks them, and reveals one pick with a reason for each person.
+4. Everyone has one veto that reveals the runner-up.
 
-## Installation
+## Stack
+TypeScript, React + Vite, Cloudflare Workers and Durable Objects (one live room per group), TMDb for film data, and an LLM through the OpenAI SDK (Groq free tier). See [`docs/SETUP.md`](docs/SETUP.md).
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/ArhamAzad2004/AI-MovieGuide.git
-   cd AI-MovieGuide
+## Attribution
+This product uses TMDB and the TMDB APIs but is not endorsed or certified by TMDB. Streaming availability data by JustWatch.
+
+## Licence
+All rights reserved. See [`LICENSE`](LICENSE).
