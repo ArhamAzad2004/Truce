@@ -70,7 +70,7 @@ Full reasoning goes in `DECISIONS.md` (Phase 2).
 ### Phase 5 — Slice 3: inputs · Opus 5.5
 - [x] Quick taps: mood, energy, time, services.
 - [x] `Catalog` DO: MOTN client (`GET /countries`, `GET /shows/search/title`), trimmed cache, daily and monthly counters, `QUOTA_REACHED`. `GET /api/regions`, `GET /api/services?region=`, `GET /api/search?q=` served from it. Sample data when no key is set.
-- [ ] With the real key, check the MOTN **[verify]** list in `TRD.md` §10 (quota status code, billing cycle, poster key names, UAE services from a live `/countries` call).
+- [ ] With the real key, check the MOTN **[verify]** list in `TRD.md` §10. Checked live on 2026-11-16 (4 requests): `/countries` and title search parse correctly, numeric string ids, the `w240` poster key (signed URLs of about 470 chars on `cdn.movieofthenight.com`, about 18 KB each), and UAE services (Netflix, Prime Video, Apple TV, Mubi, Curiosity Stream, Crunchyroll, Zee5). Still open: the status MOTN returns at quota, the billing cycle (owner checks the dashboard), and the `w360` key (Phase 6).
 - [x] Favourites picker (3-character minimum, 500 ms debounce, 3 films); ready states (edits clear ready; region change clears services); host's "Settle it" shown, opening at ≥ 2 ready (it starts the pick in Phase 6).
 - **Done when:** a member finishes inputs in under 25 s on a phone; lobby shows who's ready without revealing answers; a room of 3 uses about 15 MOTN requests for search, measured.
 

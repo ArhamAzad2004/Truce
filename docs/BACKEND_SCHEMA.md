@@ -57,7 +57,7 @@ type Room = {
 
 - `connected` is not stored. It is rebuilt from `ctx.getWebSockets()`; each socket carries its `memberId` in `ws.serializeAttachment`.
 - `poster` is a full URL on `https://cdn.movieofthenight.com/` (it carries an `Expires` query value; MOTN says image URLs stay valid for 6 to 12 months). The server rejects any other host. The client uses the URL as it is.
-- Film ids are MOTN show ids: strings such as `"82"`. Validated as `/^[a-z0-9]{1,16}$/i` **[verify the id format with real responses]**.
+- Film ids are MOTN show ids: strings such as `"82"`. Validated as `/^[a-z0-9]{1,16}$/i` (real ids seen on 2026-11-16 are numeric strings such as `"27669"`).
 - No film overview or description is ever stored in a room.
 
 ## 2. Public view (what clients receive)
@@ -91,6 +91,7 @@ All under the app's own origin. JSON in and out. Errors are `{ "error": "<CODE>"
 - `POST /api/rooms` generates the code and host token with `crypto.getRandomValues`, sets `region` from `request.cf.country` (falls back to `US` when the country is missing, not supported by MOTN, or the country list could not be loaded), initialises the room and sets the expiry alarm. It answers 503 `QUOTA_REACHED` while the data quota is used up, so nobody opens a room that cannot finish.
 - A browser cannot read the status of a failed WebSocket handshake. When a socket never opens, the client sends a plain `GET` to the same path: 404 means "no such room", 426 means the room exists and the failure was the network.
 - The Origin check compares the `Origin` header with the origin of the request URL, so there is no allow-list to configure. It applies to upgrades only.
+- Search results keep MOTN's own order, which favours exact title matches over well-known films ("godfather" lists *The Godfather* seventh). Typing more of the title fixes it.
 - Search, regions and services are trimmed views served by the Catalog object (section 7). No MOTN key and no raw MOTN response reaches the client.
 - `QUOTA_REACHED` bodies carry `"scope": "day"` or `"month"` so the client can say when Truce is back.
 - API responses send `Cache-Control: no-store` (except search, regions and services: `public, max-age=3600`) and `X-Content-Type-Options: nosniff`.
