@@ -20,5 +20,6 @@
     "AI_BASE_URL": "https://api.groq.com/openai/v1",
     "AI_MODEL": "openai/gpt-oss-20b"
   },
-  "observability": { "enabled": true }
+  // Errors and our own log lines only. Per-request logs are off: they would record room codes and search text in URLs.
+  "observability": { "enabled": true, "logs": { "invocation_logs": false } }
 }

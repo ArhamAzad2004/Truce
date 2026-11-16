@@ -81,6 +81,8 @@ export function Room({ code, go }: { code: string; go: (to: string) => void }) {
       return <Notice title="The lights are up." body="This room closed after 4 hours. Open a new one to pick again." action="Open a room" onAction={open} />;
     case "late":
       return <Notice title="This room has already settled." body="Ask the host for a new one." action="Open a room" onAction={open} />;
+    case "elsewhere":
+      return <Notice title="Your seat is open in another tab." body="Carry on there, or bring it back to this one." action="Use this tab" onAction={room.tryAgain} />;
     case "offline":
       return <Notice title="Still can't reach the room." body="Check your connection." action="Try again" onAction={room.tryAgain} />;
     case "connecting":

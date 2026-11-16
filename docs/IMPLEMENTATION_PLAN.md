@@ -92,8 +92,8 @@ Full reasoning goes in `DECISIONS.md` (Phase 2).
 - **Done when:** each member can veto once, no film repeats, no dead-end screen.
 
 ### Phase 9 — Hardening · Fable 5.2
-- [ ] Rate-limit bindings **[verify Free plan]** (fallback: in-memory per-isolate counter), `public/_headers` (CSP with `img-src 'self' https://cdn.movieofthenight.com`, `frame-ancestors 'none'`, `Referrer-Policy: no-referrer`, `X-Content-Type-Options`), message size and flood caps.
-- [ ] `/security-review`, `npm audit`, grep `dist/` for secrets.
+- [x] Per-address rate limits and daily budgets in the Catalog object (the binding's Free-plan status could not be verified), `public/_headers` (CSP with `img-src 'self' https://cdn.movieofthenight.com`, `frame-ancestors 'none'`, `Referrer-Policy: no-referrer`, `X-Content-Type-Options`), message size and flood caps.
+- [x] Independent security review (findings fixed, one accepted risk), `npm audit`, grep `dist/` for secrets.
 - **Done when:** every `SECURITY_PRIVACY.md` checklist row is ticked with evidence.
 
 ### Phase 10 — Deploy and portfolio polish · Opus 5.5

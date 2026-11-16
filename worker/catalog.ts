@@ -1,5 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
-import { cleanQuery } from "../shared/limits";
+import { LIMITS, cleanQuery } from "../shared/limits";
 import type { Favourite, FilmRow, QuotaScope } from "../shared/protocol";
 import { fixtures } from "./fixtures";
 import { type CandidatePage, type CandidateQuery, type Countries, QuotaError, type Source, live } from "./motn";
@@ -24,6 +24,30 @@ const row = ({ id, title, year, poster }: Favourite): FilmRow => ({ id, title, y
 export class Catalog extends DurableObject<Env> {
   private kv = this.ctx.storage.kv;
   private inflight = new Map<string, Promise<Result<FilmRow[]>>>();
+  // Per-IP request counts live in memory only: never stored, never logged, gone when the object sleeps.
+  private windows = new Map<string, { start: number; count: number }>();
+  private countriesRetryAt = 0;
+
+  /** Fixed window per client and bucket. This object is a singleton, so the count is exact. */
+  async allow(bucket: keyof typeof LIMITS.rate, client: string): Promise<boolean> {
+    const [limit, period] = LIMITS.rate[bucket];
+    const now = Date.now();
+    if (this.windows.size > 5000) {
+      // Bounded memory: drop finished windows; if that isn't enough, start over (limits loosen briefly).
+      for (const [key, w] of this.windows) if (now - w.start >= 86_400_000 || (now - w.start >= 60_000 && !key.includes("Day:"))) this.windows.delete(key);
+      if (this.windows.size > 5000) this.windows.clear();
+    }
+    // One IPv6 customer usually holds a whole /64, so count the prefix, not the address.
+    const who = client.includes(":") ? client.split(":").slice(0, 4).join(":") : client;
+    const key = `${bucket}:${who}`;
+    const window = this.windows.get(key);
+    if (!window || now - window.start >= period) {
+      this.windows.set(key, { start: now, count: 1 });
+      return true;
+    }
+    window.count += 1;
+    return window.count <= limit;
+  }
 
   // No key = sample data, so local dev, tests and CI never spend the allowance.
   private source(): Source {
@@ -63,14 +87,23 @@ export class Catalog extends DurableObject<Env> {
   async countries(): Promise<Result<Countries>> {
     const hit = this.kv.get<{ at: number; data: Countries }>("countries");
     if (hit && Date.now() - hit.at < COUNTRIES_TTL) return { ok: true, data: hit.data };
+    // After a failure, wait before asking again, so an outage can't spend a request on every call.
+    if (Date.now() < this.countriesRetryAt) return hit ? { ok: true, data: hit.data } : { ok: false, error: "UPSTREAM" };
     const fresh = await this.call("other", () => this.source().countries());
-    if (fresh.ok && Object.keys(fresh.data).length) this.kv.put("countries", { at: Date.now(), data: fresh.data });
-    else if (hit) return { ok: true, data: hit.data }; // an old list beats none
-    return fresh;
+    if (fresh.ok && Object.keys(fresh.data).length) {
+      this.kv.put("countries", { at: Date.now(), data: fresh.data });
+      return fresh;
+    }
+    this.countriesRetryAt = Date.now() + 10 * 60 * 1000;
+    if (hit) return { ok: true, data: hit.data }; // an old list beats none
+    return fresh.ok ? { ok: false, error: "UPSTREAM" } : fresh;
   }
 
-  /** `raw` is validated by the Worker (3 to 60 chars). Repeats within 30 days cost nothing. */
-  async search(raw: string): Promise<Result<FilmRow[]>> {
+  /**
+   * `raw` is validated by the Worker (3 to 60 chars). Repeats within 30 days cost nothing.
+   * A search nobody has run before spends the shared allowance, so each client gets a daily budget of those.
+   */
+  async search(raw: string, client: string | null = null): Promise<Result<FilmRow[]>> {
     const query = cleanQuery(raw);
     const hit = this.kv.get<{ at: number; ids: string[] }>(`q:${query}`);
     if (hit && Date.now() - hit.at < SEARCH_TTL) {
@@ -78,6 +111,7 @@ export class Catalog extends DurableObject<Env> {
     }
     const running = this.inflight.get(query);
     if (running) return running;
+    if (client !== null && !(await this.allow("newSearchesDay", client))) return { ok: false, error: "QUOTA_REACHED", scope: "day" };
     const request = this.call("search", () => this.source().search(query)).then((result): Result<FilmRow[]> => {
       if (!result.ok) return result;
       for (const film of result.data) this.kv.put(`f:${film.id}`, film);

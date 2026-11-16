@@ -69,7 +69,7 @@ export function QuickTaps({ you, region, onDone, onBack }: Props) {
       </header>
       <div className="stack">
         <h1 className="title">What are you in for?</h1>
-        <p className="muted">Four taps. Nobody else sees your answers.</p>
+        <p className="muted">Four taps. The others only see the reason on your final ticket.</p>
       </div>
 
       <form className="stack" onSubmit={submit}>

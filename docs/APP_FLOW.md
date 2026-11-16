@@ -134,7 +134,7 @@ Every screen: wordmark lozenge top left, a DM Mono label top right (step, role o
 - **Copy:**
   - Top right: "Step 1 / 2"
   - Title: "What are you in for?"
-  - Sub: "Four taps. Nobody else sees your answers."
+  - Sub: "Four taps. The others only see the reason on your final ticket."
   - Labels: "Mood" · "Energy" · "Time" · "Services", each with "Pick one" or "Pick any"
   - Options: Cosy · Funny · Tense · Moving · Mind-bending · Feel-good / Half asleep · Awake · Wired / 90 min · 2 hours · 2½ hours · No limit / Netflix · Prime Video · Disney+ · …
   - Primary: "Next: pick 3 films"

@@ -133,3 +133,46 @@ describe("rooms", () => {
     expect((await exports.default.fetch(`${BASE}/api/rooms/0000000000/ws`)).status).toBe(404);
   });
 });
+
+describe("caps", () => {
+  it("refuses a thirteenth socket, but drops idle ones first to make room", async () => {
+    const { code } = await createRoom();
+    const members = [];
+    for (let i = 1; i <= LIMITS.members; i++) members.push(await join(code, `Guest ${i}`));
+    for (let i = 0; i < LIMITS.sockets - LIMITS.members; i++) {
+      const again = await open(code); // the same people in a second tab
+      again.send({ type: "resume", token: members[i].welcome.token });
+      await again.until("welcome");
+    }
+    const extra = await open(code);
+    expect(await extra.next()).toEqual({ type: "error", code: "ROOM_FULL" });
+    expect(await extra.closed).toBe(1008);
+  });
+
+  it("lets one person hold two sockets; a third stands the oldest down", async () => {
+    const { code } = await createRoom();
+    const first = await join(code, "Sam");
+    const tabs = [first];
+    for (let i = 0; i < 2; i++) {
+      const tab = await open(code);
+      tab.send({ type: "resume", token: first.welcome.token });
+      await tab.until("welcome");
+      tabs.push({ ...tab, welcome: first.welcome });
+    }
+    expect(await first.closed).toBe(4001);
+  });
+
+  it("refuses a sixth settle", async () => {
+    const { code, hostToken } = await createRoom();
+    const host = await join(code, "Sam", hostToken);
+    await runInDurableObject(env.ROOM.getByName(code), (_room, state) => {
+      const room = state.storage.kv.get<{ settleAttempts: number; members: Record<string, { ready: boolean; answers: object }> }>("room")!;
+      room.settleAttempts = LIMITS.settleAttempts;
+      for (const m of Object.values(room.members)) { m.ready = true; m.answers = { mood: "funny", energy: "awake", maxMinutes: null, serviceIds: ["netflix"] }; }
+      room.members.other = { ...Object.values(room.members)[0] };
+      state.storage.kv.put("room", room);
+    });
+    host.send({ type: "settle" });
+    expect(await host.until("error")).toEqual({ type: "error", code: "WRONG_PHASE" });
+  });
+});

@@ -79,7 +79,7 @@ Never sent: tokens, other members' answers or favourites, lower-ranked films, th
 
 ## 3. HTTP endpoints
 
-All under the app's own origin. JSON in and out. Errors are `{ "error": "<CODE>" }` with the status shown. Rate limits are per client IP per 60 s (approximate, per Cloudflare location).
+All under the app's own origin. JSON in and out. Errors are `{ "error": "<CODE>" }` with the status shown. Rate limits are per client address per 60 s, exact and global (counted in the Catalog object; IPv6 by /64). Two daily budgets also apply per address: 6 new rooms, and 25 searches that are not already cached (the 26th answers 503 `QUOTA_REACHED` with `scope: "day"`).
 
 | Method and path | Request | 200 response | Errors | Rate limit |
 |---|---|---|---|---|
@@ -161,7 +161,7 @@ Text frames, JSON, one object per frame, discriminated on `type`. A room handles
 | Code | Meaning | Socket after |
 |---|---|---|
 | `BAD_MESSAGE` | Not JSON, over 2 KB, unknown type, failed validation, an unknown `resume` token, or a favourite id the Catalog has not seen | Open (closed if it was the first frame) |
-| `ROOM_FULL` | 8 members already, or 12 joined sockets. At 12 sockets the room first closes sockets that never joined | Closed (1008) |
+| `ROOM_FULL` | 8 members already, or 12 joined sockets. One member may hold 2 sockets; a third closes the oldest with code 4001, and that client does not reconnect by itself. At 12 sockets the room first closes sockets that never joined | Closed (1008) |
 | `NAME_TAKEN` | Nickname in use in this room (compared case-insensitively after NFKC) | Open; client may retry `join` |
 | `NOT_HOST` | Host-only message (`setRegion`, `settle`, `reopen`) from a non-host | Open |
 | `WRONG_PHASE` | Message not allowed in the current phase or state (join after the lobby, settle with fewer than 2 ready, settle while one is running, no attempts left) | Open |
@@ -296,7 +296,7 @@ Candidates are capped at 10; favourites at 3 per member. This is the least data 
 | Ranking length | exactly 3 |
 | Ids | each in `C`, all distinct |
 | Reasons | exactly one per settled member per film; `member` matches `/^P[1-8]$/` and exists |
-| Text | 1 to 140 chars after trim; no control characters; no `http`, `www.`, `://` or `_` (a leaked setting name) |
+| Text | 1 to 140 chars after trim; no control or invisible formatting characters; no `http`, `www.`, `://`, bare web addresses, or `_` (a leaked setting name) |
 
 Fail → one retry with the validation error appended, inside the shared deadline. A second failure, a 429, a timeout or any thrown error → fallback. Film facts shown in the UI (title, year, poster, runtime, services) always come from MOTN data held by the room, never from the model's output.
 

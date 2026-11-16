@@ -81,6 +81,39 @@ describe("film listings", () => {
   });
 });
 
+describe("rate limits", () => {
+  it("limits each client address separately, per kind of request", async () => {
+    const from = (ip: string, path: string, init: RequestInit = {}) =>
+      exports.default.fetch(`${BASE}${path}`, { ...init, headers: { "CF-Connecting-IP": ip } });
+    const statuses = async (ip: string, path: string, times: number, init?: RequestInit) => {
+      const out: number[] = [];
+      for (let i = 0; i < times; i++) out.push((await from(ip, path, init)).status);
+      return out;
+    };
+    expect(await statuses("203.0.113.1", "/api/rooms", 6, { method: "POST" })).toEqual([200, 200, 200, 200, 200, 429]);
+    expect((await from("203.0.113.2", "/api/rooms", { method: "POST" })).status).toBe(200); // someone else is unaffected
+    expect((await from("203.0.113.1", "/api/regions")).status).toBe(200); // a different bucket
+    expect((await statuses("203.0.113.3", "/api/regions", 31)).at(-1)).toBe(429);
+    expect(await (await from("203.0.113.3", "/api/search?q=totoro")).json()).toEqual({ error: "RATE_LIMITED" });
+    expect((await statuses("203.0.113.4", "/api/rooms/0000000000/ws", 21)).slice(-2)).toEqual([404, 429]);
+  });
+
+  it("gives each client a daily budget of new searches, so one person can't drain the shared allowance", async () => {
+    const from = (ip: string, q: string) => exports.default.fetch(`${BASE}/api/search?q=${q}`, { headers: { "CF-Connecting-IP": ip } });
+    await from("203.0.113.9", "totoro"); // someone else caches this one
+    const statuses: number[] = [];
+    for (let i = 0; i < 26; i++) statuses.push((await from("2001:db8:1:2::" + i, `budget query ${i}`)).status); // one /64, many addresses
+    expect(statuses.slice(0, 25).every((s) => s === 200)).toBe(true);
+    expect(statuses[25]).toBe(503);
+    expect((await from("2001:db8:1:2::99", "totoro")).status).toBe(200); // cached answers stay free
+    expect((await from("2001:db8:9:9::1", "budget query fresh")).status).toBe(200); // another network is unaffected
+  });
+
+  it("measures the search length after normalising", async () => {
+    expect((await get(`/api/search?q=${encodeURIComponent("\uFDFA".repeat(10))}`)).status).toBe(400); // 10 chars that expand to 180
+  });
+});
+
 describe("picks", () => {
   it("saves answers and favourites privately and marks ready", async () => {
     const { code, hostToken } = await createRoom();

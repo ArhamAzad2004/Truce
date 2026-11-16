@@ -14,6 +14,13 @@ export const LIMITS = {
   settleAttempts: 5,
   minReady: 2,
   reasonChars: 140,
+  socketsPerMember: 2,
+  // Per client address: [requests, window in ms] (docs/BACKEND_SCHEMA.md §3).
+  // The daily budgets stop one person from draining the film allowance that everyone shares.
+  rate: {
+    rooms: [5, 60_000], sockets: [20, 60_000], listings: [30, 60_000],
+    roomsDay: [6, 86_400_000], newSearchesDay: [25, 86_400_000],
+  },
 } as const;
 
 export const CODE_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"; // Crockford base32

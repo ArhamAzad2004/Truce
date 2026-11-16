@@ -39,11 +39,12 @@ type RoomState = {
   };
 };
 
-type Attachment = { memberId: string } | null;
+type Attachment = { memberId: string; at: number } | null; // `at` = when this socket took the seat
 type Seat = Extract<ClientMessage, { type: "join" | "resume" }>;
 
 const EXPIRED_CLOSE = 4000;
 const POLICY_CLOSE = 1008;
+const REPLACED_CLOSE = 4001; // this seat was opened in more tabs than allowed; the client must not reconnect by itself
 
 const randomBase64Url = (bytes: number) =>
   btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(bytes))))
@@ -80,6 +81,8 @@ export class Room extends DurableObject<Env> {
 
   private load() {
     const room = this.ctx.storage.kv.get<RoomState>("room");
+    // Belt and braces: a room past its time is gone even if the alarm is late.
+    if (room && Date.now() >= room.expiresAt + 60_000) return undefined;
     // A pick that died with the object (a restart mid-settle) must not leave the room stuck.
     if (room?.phase === "settling" && !this.settling) {
       room.phase = "lobby";
@@ -229,31 +232,36 @@ export class Room extends DurableObject<Env> {
     this.broadcast(room);
 
     this.settling = true;
-    const catalog = this.catalog();
-    const outcome = await pick(room.region, voters, (query) => catalog.candidates(query))
-      .catch(() => ({ ok: false, notice: "PICK_FAILED" }) as const);
-    // No key = the AI step is off (kill switch). Any failure inside it also leaves the deterministic ranking.
-    const apiKey = (this.env as { AI_API_KEY?: string }).AI_API_KEY;
-    const ai = outcome.ok && apiKey
-      ? await rank(outcome.ranking, voters, { apiKey, baseUrl: this.env.AI_BASE_URL, model: this.env.AI_MODEL }).catch(() => null)
-      : null;
+    try {
+      const catalog = this.catalog();
+      const outcome = await pick(room.region, voters, (query) => catalog.candidates(query))
+        .catch(() => ({ ok: false, notice: "PICK_FAILED" }) as const);
+      // No key = the AI step is off (kill switch). Any failure inside it also leaves the deterministic ranking.
+      const apiKey = (this.env as { AI_API_KEY?: string }).AI_API_KEY;
+      const ai = outcome.ok && apiKey
+        ? await rank(outcome.ranking, voters, { apiKey, baseUrl: this.env.AI_BASE_URL, model: this.env.AI_MODEL }).catch(() => null)
+        : null;
 
-    const after = this.load(); // the room may have expired while the pick ran
-    this.settling = false; // only after loading: `load` treats "settling with no pick running" as a crash
-    if (!after || after.phase !== "settling") return;
-    if (outcome.ok) {
-      after.phase = "result";
-      after.result = {
-        ranking: ai ?? outcome.ranking, index: 0, pool: outcome.pool,
-        source: ai ? "ai" : "fallback", vetoes: [], exhausted: false,
-      };
-    } else {
-      after.phase = "lobby";
-      after.notice = outcome.notice;
-      refuse(outcome.notice);
+      const after = this.load(); // the room may have expired while the pick ran
+      if (!after || after.phase !== "settling") return;
+      if (outcome.ok) {
+        after.phase = "result";
+        after.result = {
+          ranking: ai ?? outcome.ranking, index: 0, pool: outcome.pool,
+          source: ai ? "ai" : "fallback", vetoes: [], exhausted: false,
+        };
+      } else {
+        after.phase = "lobby";
+        after.notice = outcome.notice;
+        refuse(outcome.notice);
+      }
+      this.save(after);
+      this.broadcast(after);
+    } finally {
+      // Cleared last: `load` treats "settling with no pick running" as a crash and returns the room to the lobby,
+      // which is also what rescues the room if anything above throws.
+      this.settling = false;
     }
-    this.save(after);
-    this.broadcast(after);
   }
 
   /** One veto each: move to the next film. Never calls the listings or the AI, and no film appears twice. */
@@ -328,7 +336,14 @@ export class Room extends DurableObject<Env> {
       }
     }
 
-    ws.serializeAttachment({ memberId } satisfies Attachment);
+    // One person can't hold the room's sockets: beyond two tabs, the oldest is told to stand down.
+    const mine = this.ctx.getWebSockets()
+      .map((sock) => ({ sock, att: sock.deserializeAttachment() as Attachment }))
+      .filter((x) => x.att?.memberId === memberId)
+      .sort((a, b) => a.att!.at - b.att!.at);
+    for (const { sock } of mine.slice(0, Math.max(0, mine.length - LIMITS.socketsPerMember + 1))) sock.close(REPLACED_CLOSE, "REPLACED");
+
+    ws.serializeAttachment({ memberId, at: Date.now() } satisfies Attachment);
     const member = room.members[memberId];
     this.send(ws, { type: "welcome", memberId, token: member.token, state: this.publicState(room), you: you(member) });
     this.broadcast(room, ws);
@@ -344,8 +359,7 @@ export class Room extends DurableObject<Env> {
   }
 
   async alarm() {
-    const room = this.load();
-    if (room) {
+    if (this.ctx.storage.kv.get("room")) {
       for (const ws of this.ctx.getWebSockets()) {
         this.send(ws, { type: "error", code: "EXPIRED" });
         ws.close(EXPIRED_CLOSE, "EXPIRED");

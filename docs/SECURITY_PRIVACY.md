@@ -14,7 +14,7 @@ What Truce protects, from whom, and what data it touches. Shapes and limits refe
 | MOTN quota (1,000 requests a month) | The scarcest resource. Exhaustion rests the app for everyone until the next cycle |
 | Other free-tier quota (Workers, Durable Objects, Groq) | Exhaustion takes the app down; the project must stay at $0 |
 | Room integrity | A stranger settling, vetoing or impersonating a member spoils the room |
-| Member answers and favourites | Promised private ("Nobody else sees your answers") |
+| Member answers and favourites | Never listed to others; the group-visible reason is derived from them and may mention one |
 | Member and host tokens | Whoever holds one is that member |
 | What appears on other people's screens | Nicknames and reasons are shown to the whole group |
 
@@ -106,18 +106,21 @@ Static assets, via `public/_headers`. API responses set `X-Content-Type-Options`
 
 | Scope | Limit | Enforced by |
 |---|---|---|
-| Create room | 5 per minute per IP | Rate Limiting binding `RL_CREATE` |
-| Search + regions + services | 30 per minute per IP | Rate Limiting binding `RL_SEARCH` |
-| WebSocket upgrade | 20 per minute per IP | Rate Limiting binding `RL_WS` |
+| Create room | 5 per minute and 6 per day per client address | Catalog object (`allow`) |
+| Search + regions + services | 30 per minute per client address | Catalog object (`allow`) |
+| New searches (not already cached) | 25 per day per client address | Catalog object (`search`) |
+| WebSocket upgrade | 20 per minute per client address | Catalog object (`allow`) |
 | Messages per socket | 20 per 10 s, then close | Room object |
-| Sockets per room | 12 | Room object |
+| Sockets per room | 12; at most 2 per member (a third closes the oldest with code 4001) | Room object |
 | Members per room | 8 | Room object |
 | Frame size | 2 KB | Room object |
 | Settle | one at a time; 5 attempts per room | Room object |
 | AI calls | at most 2 per settle, inside one 12 s deadline | Pick pipeline |
 | MOTN requests | 120 per UTC day (search stops at 100); 950 per month | Catalog object |
 
-The binding is generally available and takes 10 s or 60 s windows; its counts are approximate and separate per Cloudflare location. Whether it is included on the Workers Free plan is **not verified** in the docs (checked 2026-11-16); confirm with a deploy in Phase 9. Fallback: an in-memory per-IP counter in the Worker isolate.
+Per-address limits are counted in the Catalog object's memory, keyed by `CF-Connecting-IP` (IPv6 by its /64 prefix). The Catalog is a singleton, so the counts are exact and global. Addresses are never written to storage or logs, and the counters vanish when the object sleeps. Cloudflare's Rate Limiting binding was not used: its docs do not say whether it is free, and its counts are approximate and per location (checked 2026-11-16).
+
+**Accepted risk.** The daily budgets stop one person or one network from draining the shared film allowance. Someone with many addresses (a botnet, or a rotating proxy) can still push Truce into its resting state for a day by running new searches or by opening rooms and settling with varied answers (up to 25 upstream calls per room). The damage is bounded: nothing is billed, cached answers keep working, and the caps reset. Closing it fully would need accounts or a challenge page, which are out of scope for v1.
 
 ## 7. Abuse handling
 
@@ -130,48 +133,48 @@ The binding is generally available and takes 10 s or 60 s windows; its counts ar
 
 ## 8. Pre-launch checklist
 
-Tick in Phase 9, each with evidence (test name, command output or screenshot).
+Tick in Phase 9, each with evidence (test name, command output or screenshot). Unticked rows are still open: CSP on a real phone, a manual read of the logs (per-request logs are switched off in `wrangler.jsonc`, so URLs with room codes and search text are not recorded), the resting screen by hand, the about sheet (Phase 10), and third-party requests in a network tab.
 
 **Secrets and build**
-- [ ] `git ls-files` shows no `.dev.vars` and no keys; `.gitignore` covers it
-- [ ] Grep of `dist/` finds no `MOTN_API_KEY` or `AI_API_KEY` values, no `X-API-Key` and no `Bearer ` strings
-- [ ] `npm audit` shows no high or critical issues in runtime dependencies
-- [ ] Production secrets set with `wrangler secret put`; `wrangler.jsonc` contains none
+- [x] `git ls-files` shows no `.dev.vars` and no keys; `.gitignore` covers it — checked 2026-11-16: `git ls-files` has no `.dev.vars` or `.env`; the review also found none in git history
+- [x] Grep of `dist/` finds no `MOTN_API_KEY` or `AI_API_KEY` values, no `X-API-Key` and no `Bearer ` strings — checked 2026-11-16: grep of `dist/client` for key names, `X-API-Key`, `Bearer ` and API hosts found nothing
+- [x] `npm audit` shows no high or critical issues in runtime dependencies — `npm audit`: 0 vulnerabilities (2026-11-16)
+- [x] Production secrets set with `wrangler secret put`; `wrangler.jsonc` contains none — `wrangler secret list` shows `MOTN_API_KEY` and `AI_API_KEY`; `wrangler.jsonc` holds only the AI base URL and model name
 
 **Transport and headers**
-- [ ] `curl -I` on the live URL shows the CSP, `frame-ancestors 'none'`, `Referrer-Policy`, `X-Content-Type-Options`
+- [x] `curl -I` on the live URL shows the CSP, `frame-ancestors 'none'`, `Referrer-Policy`, `X-Content-Type-Options` — live on `/`, `/new`, `/r/<code>` and assets, 2026-11-16
 - [ ] No CSP violations in the console across all screens on a phone
-- [ ] WebSocket upgrade with a foreign `Origin` returns 403 (test)
+- [x] WebSocket upgrade with a foreign `Origin` returns 403 (test) — `room.test.ts` "guards the socket route"; also 403 on the live site
 
 **Room protocol**
-- [ ] Unknown room code returns 404 and creates no storage (test)
-- [ ] Oversized, malformed and wrong-phase frames are rejected; `join` outside the lobby returns `WRONG_PHASE` (tests)
-- [ ] Non-host `settle`, `setRegion` and `reopen` return `NOT_HOST` (test)
-- [ ] Second veto by the same member returns `VETO_USED` (test)
-- [ ] Double `settle` race produces one settle; the sixth attempt is refused (tests)
-- [ ] Captured `state` frames contain no token, no other member's answers, no lower-ranked film (test)
-- [ ] Message flood closes the socket; 13th socket is refused (tests)
-- [ ] Nickname allow-list rejects `<`, `>`, control characters and over-long input (test)
+- [x] Unknown room code returns 404 and creates no storage (test) — `room.test.ts` "guards the socket route"
+- [x] Oversized, malformed and wrong-phase frames are rejected; `join` outside the lobby returns `WRONG_PHASE` (tests) — `room.test.ts` "rejects bad messages", "refuses a join outside the lobby"
+- [x] Non-host `settle`, `setRegion` and `reopen` return `NOT_HOST` (test) — `pick.test.ts` "settles for the ready members", `picks.test.ts` "lets only the host change region"
+- [x] Second veto by the same member returns `VETO_USED` (test) — `pick.test.ts` veto test; also on the live site
+- [x] Double `settle` race produces one settle; the sixth attempt is refused (tests) — `pick.test.ts` "settles for the ready members" (double tap), `room.test.ts` "refuses a sixth settle"
+- [x] Captured `state` frames contain no token, no other member's answers, no lower-ranked film (test) — `room.test.ts` "seats the host", `picks.test.ts` "saves answers and favourites privately", `pick.test.ts` (pick keys only)
+- [x] Message flood closes the socket; 13th socket is refused (tests) — `room.test.ts` "closes a flooding socket", "refuses a thirteenth socket"
+- [x] Nickname allow-list rejects `<`, `>`, control characters and over-long input (test) — `room.test.ts` "rejects bad messages" (`<script>`, 2,048-char name)
 
 **AI and data**
-- [ ] The prompt builder's output contains no nickname, token, room code, overview or cast (test with a distinctive nickname and a fixture overview)
-- [ ] Hallucinated id, missing member, long reason, URL in reason, 429, timeout and a spent deadline all end in the fallback (tests)
-- [ ] A favourite id the Catalog has not seen is rejected without an upstream call (test)
-- [ ] A poster URL on any host other than `cdn.movieofthenight.com` is dropped (test)
+- [x] The prompt builder's output contains no nickname, token, room code, overview or cast (test with a distinctive nickname and a fixture overview) — `ai.test.ts` "sends the model only labels, taps and titles"
+- [x] Hallucinated id, missing member, long reason, URL in reason, 429, timeout and a spent deadline all end in the fallback (tests) — `ai.test.ts` fallback cases, rate limit, timeout, spent deadline
+- [x] A favourite id the Catalog has not seen is rejected without an upstream call (test) — `picks.test.ts` "rejects services outside the region and films it has never listed"
+- [x] A poster URL on any host other than `cdn.movieofthenight.com` is dropped (test) — `picks.test.ts` "keeps only the fields Truce uses"
 
 **Limits and lifecycle**
-- [ ] Rate-limit bindings deploy on the Free plan and return 429 past the limit (manual)
+- [x] Rate-limit bindings deploy on the Free plan and return 429 past the limit (manual) — replaced by the Catalog limiter (section 6): `picks.test.ts` "rate limits"; the sixth `POST /api/rooms` in a minute returned 429 on the live site
 - [ ] Daily and monthly MOTN caps return `QUOTA_REACHED` and send no upstream request (tests); the resting screen shows (manual)
-- [ ] Room storage is empty after the alarm; the code then returns 404 (test)
+- [x] Room storage is empty after the alarm; the code then returns 404 (test) — `room.test.ts` "expires"
 - [ ] Logs for a full session contain no nickname, token, room code, IP or search text (manual read)
 
 **Privacy and attribution**
 - [ ] About sheet shows the privacy notice below and the MOTN attribution sentence with its link
-- [ ] Attribution line visible on every reveal and on the landing footer
-- [ ] No service logos anywhere; services are text
+- [x] Attribution line visible on every reveal and on the landing footer — Landing footer and Reveal footer render `Attribution`
+- [x] No service logos anywhere; services are text — services render as text labels and tags only
 - [ ] No third-party requests other than `cdn.movieofthenight.com` (network tab); fonts load from the app's own origin
-- [ ] The MOTN items marked [verify] in [TRD §10](TRD.md#10-verified-platform-facts) checked with a real key
-- [ ] `/security-review` run and findings closed
+- [x] The MOTN items marked [verify] in [TRD §10](TRD.md#10-verified-platform-facts) checked with a real key — endpoints, fields, posters and UAE services checked live; the quota reply and the billing cycle are still open
+- [x] `/security-review` run and findings closed — independent review 2026-11-16: 0 critical, 1 high, 1 medium, 5 low. All fixed except the many-address quota drain, recorded as an accepted risk in section 6
 
 ## 9. Third-party terms
 
@@ -207,9 +210,11 @@ Checked 2026-11-16.
 >
 > **What we keep, and for how long.** Your nickname, the answers you tap, and the films you pick as favourites. They live in your room and are deleted automatically 4 hours after the room was opened. We guess the room's country from the host's connection so we can check what is streaming there; the host can change it.
 >
-> **Who sees what.** Everyone in your room sees your nickname, whether you are ready, and the reason the pick fits you. Nobody else sees your answers or your favourites.
+> **Who sees what.** Everyone in your room sees your nickname, whether you are ready, and the reason the pick fits you. Your taps and your three films are never shown as a list, and nobody sees them in the lobby. The reason on the final ticket is written from them, so it may name a film you picked or the mood you chose, and everyone in the room can read it.
 >
 > **Who else is involved.** Film details, posters and streaming availability come from the Streaming Availability API by Movie of the Night. When you search for a film, it receives your search words, but not your nickname or who you are. We keep search results for up to 30 days so the same search is faster next time; they are not linked to you. Posters load straight from its image servers, so they see your device's IP address, as any website does when it shows you an image. When the pick is ranked by a language model, it receives the group's tapped answers and favourite film titles labelled only as "P1", "P2" and so on. It never receives your nickname or anything you typed. The app runs on Cloudflare.
+>
+> **Stopping abuse.** We count requests per network address for up to a day so one person cannot use up the service for everyone. The count is held in memory only. It is never saved or logged.
 >
 > **What we do not do.** No cookies, no ads, no analytics, no selling or sharing of data.
 >

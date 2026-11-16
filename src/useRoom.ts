@@ -6,7 +6,7 @@ export type RoomError = { code: ErrorCode; scope?: QuotaScope };
 
 export type RoomStatus =
   | "connecting" | "needName" | "joined"
-  | "notFound" | "full" | "expired" | "late" | "offline";
+  | "notFound" | "full" | "expired" | "late" | "offline" | "elsewhere";
 
 // Kept per tab in sessionStorage, never in the URL. `hostToken` + `nickname` are a join waiting to be sent.
 type Saved = { token?: string; hostToken?: string; nickname?: string };
@@ -23,6 +23,7 @@ function loadSeat(code: string): Saved {
 
 const MAX_TRIES = 5;
 const EXPIRED_CLOSE = 4000;
+const REPLACED_CLOSE = 4001;
 
 export function useRoom(code: string) {
   const [status, setStatus] = useState<RoomStatus>("connecting");
@@ -91,6 +92,7 @@ export function useRoom(code: string) {
         clearInterval(ping);
         if (stopped || final) return;
         if (event.code === EXPIRED_CLOSE) return setStatus("expired");
+        if (event.code === REPLACED_CLOSE) return setStatus("elsewhere"); // reconnecting would only bump the other tab
         if (!opened) {
           // A socket can't tell "no such room" from "no network", so ask the same URL over HTTP.
           const probe = await fetch(`/api/rooms/${code}/ws`).catch(() => null);

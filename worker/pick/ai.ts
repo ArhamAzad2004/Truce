@@ -96,7 +96,10 @@ export function validate(content: string, shortlist: Ranked[], labels: { label: 
       const text = entry.reasons.find((r) => r.member === label)?.text.replace(/\s+/g, " ").trim();
       if (!text) return `Film ${entry.id} has no reason for ${label}.`;
       if (text.length > LIMITS.reasonChars) return `Reasons must be at most ${LIMITS.reasonChars} characters.`;
-      if (/\p{Cc}|https?:|www\.|:\/\/|_/iu.test(text)) return "Reasons must be plain sentences: no links, underscores or control characters.";
+      // Links (with or without a scheme), leaked setting names, and invisible or direction-changing characters.
+      if (/[\p{Cc}\p{Cf}_]|https?:|www\.|:\/\/|\b[\w-]+\.[a-z]{2,}\b/iu.test(text)) {
+        return "Reasons must be plain sentences: no links, web addresses, underscores or control characters.";
+      }
       reasons[id] = text;
     }
     picked.push({ ...film, reasons });

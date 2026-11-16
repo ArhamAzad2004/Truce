@@ -1,4 +1,4 @@
-import { CODE_ALPHABET, CODE_RE, LIMITS } from "../shared/limits";
+import { CODE_ALPHABET, CODE_RE, LIMITS, cleanQuery } from "../shared/limits";
 import type { CreateRoomResponse } from "../shared/protocol";
 import type { Fail } from "./catalog";
 import { newToken } from "./room";
@@ -36,13 +36,21 @@ export default {
     }
 
     const catalog = env.CATALOG.getByName("catalog");
+    // Cloudflare sets CF-Connecting-IP on every real request and overwrites any value a client sends.
+    // It is only absent in tests and local tools, where there is nothing to limit.
+    const client = request.headers.get("CF-Connecting-IP");
+    const limited = async (bucket: keyof typeof LIMITS.rate) =>
+      client !== null && !(await catalog.allow(bucket, client));
 
     if (pathname === "/api/regions" || pathname === "/api/services" || pathname === "/api/search") {
       if (request.method !== "GET") return json({ error: "METHOD_NOT_ALLOWED" }, 405);
+      if (await limited("listings")) return json({ error: "RATE_LIMITED" }, 429);
       if (pathname === "/api/search") {
-        const q = (url.searchParams.get("q") ?? "").trim();
+        const raw = url.searchParams.get("q") ?? "";
+        // Length is checked after normalising: some single characters expand to many under NFKC.
+        const q = raw.length <= 200 ? cleanQuery(raw) : "";
         if (q.length < LIMITS.searchMin || q.length > LIMITS.searchMax) return json({ error: "BAD_REQUEST" }, 400);
-        const found = await catalog.search(q);
+        const found = await catalog.search(q, client);
         return found.ok ? json(found.data, 200, LISTING_CACHE) : failed(found);
       }
       const countries = await catalog.countries();
@@ -58,6 +66,7 @@ export default {
 
     if (pathname === "/api/rooms") {
       if (request.method !== "POST") return json({ error: "METHOD_NOT_ALLOWED" }, 405);
+      if ((await limited("rooms")) || (await limited("roomsDay"))) return json({ error: "RATE_LIMITED" }, 429);
       // Nobody should open a room that cannot finish.
       const { resting } = await catalog.status();
       if (resting) return json({ error: "QUOTA_REACHED", scope: resting }, 503);
@@ -81,6 +90,7 @@ export default {
       const upgrade = request.headers.get("Upgrade")?.toLowerCase() === "websocket";
       // Browsers always send Origin on a WebSocket handshake; only this app's own pages may connect.
       if (upgrade && request.headers.get("Origin") !== url.origin) return json({ error: "FORBIDDEN_ORIGIN" }, 403);
+      if (await limited("sockets")) return json({ error: "RATE_LIMITED" }, 429);
       return env.ROOM.getByName(ws[1]).fetch(request);
     }
 
