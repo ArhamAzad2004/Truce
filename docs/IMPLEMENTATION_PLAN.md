@@ -27,10 +27,11 @@ Full reasoning goes in `DECISIONS.md` (Phase 2).
 - **Done when:** under 15 tracked files, no secrets tracked, a fresh clone opens in Claude Code without prompts for read/run commands.
 
 ### Phase 1 — Design exploration and choice · Fable 5.2 direction, Opus 5.5 mockups
-- [ ] Research with Claude in Chrome: brand-book structure, mobile decision/reveal UI, typography-led identities. Record links and notes (no copied images) in `docs/design/references.md`.
-- [ ] Five directions in `design/mockups/01..05/index.html`, each with the same three screens at 390 px (quick taps, lobby with QR, reveal with per-person reasons) and its own type, palette, motion idea and wordmark.
-- [ ] Run `impeccable`, `no-ai-design-slop` and `audit-reference-originality` on each.
-- [ ] Owner picks one → `docs/DESIGN_BRIEF.md` as the brand book: principles, voice, wordmark, colour tokens, type scale, spacing, radius, motion, components, accessibility (WCAG AA, 44 px targets, reduced motion), attribution placement.
+- [x] Research with Claude in Chrome: brand-book structure, mobile decision/reveal UI, typography-led identities. Record links and notes (no copied images) in `docs/design/references.md`.
+- [x] Five directions in `design/mockups/0N-<slug>/index.html`, each with the same three screens at 390 px (quick taps, lobby with QR, reveal with per-person reasons) and its own type, palette, motion idea and wordmark. Plus a sixth, 06 Night Ticket, a hybrid of 01 and 03 requested by the owner.
+- [x] Run the `impeccable` design checker on each; real issues fixed, confirmed false positives recorded with reasons in `.impeccable/config.json`.
+- [x] Owner picked **06 Night Ticket** → `docs/DESIGN_BRIEF.md` as the brand book.
+- [ ] Check the mask-based ticket notches in Safari and Firefox (carry into Phase 3).
 - **Done when:** one direction signed off; tokens ready as CSS custom properties.
 
 ### Phase 2 — Docs · Fable 5.2 for PRD, TRD, BACKEND_SCHEMA, SECURITY_PRIVACY; Opus 5.5 for the rest
