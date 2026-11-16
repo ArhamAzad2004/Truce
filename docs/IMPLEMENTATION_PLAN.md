@@ -75,9 +75,9 @@ Full reasoning goes in `DECISIONS.md` (Phase 2).
 - **Done when:** a member finishes inputs in under 25 s on a phone; lobby shows who's ready without revealing answers; a room of 3 uses about 15 MOTN requests for search, measured.
 
 ### Phase 6 — Slice 4: deterministic pick (no AI) · Fable 5.2
-- [ ] Candidates, hard filters, scoring, template reasons; `settling` → `result`; reveal screen. This is the permanent fallback, shipped and tested first.
-- [ ] `Catalog.candidates` on `GET /shows/search/filters`; failed settle returns to `lobby` with a notice (`NO_CANDIDATES`, `PICK_FAILED`, `QUOTA_REACHED`).
-- [ ] Unit tests with fixture MOTN JSON.
+- [x] Candidates, hard filters, scoring, template reasons; `settling` → `result`; reveal screen (plain fade; the printing motion is Phase 10). Host `reopen` moved here from Phase 8. This is the permanent fallback, shipped and tested first.
+- [x] `Catalog.candidates` on `GET /shows/search/filters`; failed settle returns to `lobby` with a notice (`NO_CANDIDATES`, `PICK_FAILED`, `QUOTA_REACHED`).
+- [x] Unit tests with fixture MOTN JSON.
 - **Done when:** end-to-end flow gives one streamable pick with template reasons using 3 MOTN requests (5 at most) and at most 8 subrequests.
 
 ### Phase 7 — Slice 5: AI pick · Fable 5.2

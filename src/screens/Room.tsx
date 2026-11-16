@@ -4,6 +4,7 @@ import { Favourites } from "./Favourites";
 import { Lobby } from "./Lobby";
 import { Nickname } from "./Nickname";
 import { QuickTaps } from "./QuickTaps";
+import { Reveal, Settling } from "./Reveal";
 
 type NoticeProps = { title: string; body: string; action: string; onAction: () => void };
 
@@ -32,6 +33,11 @@ export function Room({ code, go }: { code: string; go: (to: string) => void }) {
   switch (room.status) {
     case "joined":
       if (!room.state) return null;
+      // The room's phase wins over whatever this person was doing: everyone sees the pick together.
+      if (room.state.phase === "settling") return <Settling />;
+      if (room.state.phase === "result") {
+        return <Reveal state={room.state} memberId={room.memberId} you={room.you} onReopen={() => room.send({ type: "reopen" })} />;
+      }
       if (view === "taps") {
         return (
           <QuickTaps
@@ -57,6 +63,7 @@ export function Room({ code, go }: { code: string; go: (to: string) => void }) {
         <Lobby
           state={room.state} memberId={room.memberId} you={room.you} error={room.error} reconnecting={room.reconnecting}
           onPick={() => setView("taps")} onRegion={(region) => room.send({ type: "setRegion", region })}
+          onSettle={() => room.send({ type: "settle" })}
         />
       );
     case "needName":

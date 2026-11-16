@@ -1,0 +1,23 @@
+.settling { justify-content: flex-start; }
+/* The printer slot the ticket will feed from (DESIGN_BRIEF §05). */
+.slot-bar { height: 8px; border: 1px solid #8A8172; border-radius: 4px; background: #050403; }
+
+.pick { display: flex; gap: var(--s4); align-items: flex-start; }
+.pick-poster { flex: none; width: 112px; aspect-ratio: 2 / 3; border-radius: 6px; background: var(--stock-dim); object-fit: cover; }
+.pick-poster-blank {
+  display: grid; place-items: center; padding: var(--s2); overflow: hidden;
+  font: 400 14px/18px var(--font-title); text-align: center; overflow-wrap: anywhere;
+}
+.pick-text { display: grid; gap: var(--s2); min-width: 0; }
+.pick-title { font: 400 24px/28px var(--font-title); overflow-wrap: anywhere; text-wrap: balance; }
+
+.reasons { display: grid; gap: var(--s3); margin: 0; padding: 0; list-style: none; }
+.reasons strong { font-weight: 600; }
+
+/* shortcut: a plain fade; the printing choreography (DESIGN_BRIEF §06) comes with the veto tear-off in Phase 10. */
+@media (prefers-reduced-motion: no-preference) {
+  .reveal { animation: reveal-in 600ms ease-out both; }
+  @keyframes reveal-in { from { opacity: 0; transform: translateY(-8px); } }
+  .settling .slot-bar { animation: slot-wait 1200ms ease-in-out infinite alternate; }
+  @keyframes slot-wait { from { opacity: .45; } }
+}

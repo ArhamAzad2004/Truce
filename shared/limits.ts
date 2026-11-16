@@ -11,6 +11,9 @@ export const LIMITS = {
   searchMin: 3,
   searchMax: 60,
   searchResults: 8,
+  settleAttempts: 5,
+  minReady: 2,
+  reasonChars: 140,
 } as const;
 
 export const CODE_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"; // Crockford base32

@@ -1,10 +1,12 @@
 import { DurableObject } from "cloudflare:workers";
 import { LIMITS } from "../shared/limits";
 import {
-  type Answers, ClientMessage, type ErrorCode, type Favourite, type Phase, type PublicState, type ServerMessage, type You,
+  type Answers, ClientMessage, type ErrorCode, type Favourite, type Film, type Notice, type Phase, type PublicState,
+  type ServerMessage, type You,
 } from "../shared/protocol";
 import type { Fail } from "./catalog";
 import type { Countries } from "./motn";
+import { type Ranked, type Voter, pick } from "./pick";
 
 type Member = {
   nickname: string;
@@ -24,7 +26,16 @@ type RoomState = {
   hostId: string | null;
   hostToken: string;
   settleAttempts: number;
+  notice?: Notice;
   members: Record<string, Member>;
+  result?: {
+    ranking: Ranked[];
+    index: number; // the current pick; a veto moves it on
+    pool: Film[]; // remaining candidates in score order
+    source: "ai" | "fallback";
+    vetoes: { memberId: string; movieId: string }[];
+    exhausted: boolean;
+  };
 };
 
 type Attachment = { memberId: string } | null;
@@ -58,6 +69,7 @@ export class Room extends DurableObject<Env> {
   // Flood counters live in memory: they reset when the object sleeps, which only happens when sockets are idle.
   private recent = new WeakMap<WebSocket, number[]>();
   private queue: Promise<void> = Promise.resolve();
+  private settling = false; // true only while this instance is running a pick
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
@@ -65,7 +77,16 @@ export class Room extends DurableObject<Env> {
     ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair('{"type":"ping"}', '{"type":"pong"}'));
   }
 
-  private load = () => this.ctx.storage.kv.get<RoomState>("room");
+  private load() {
+    const room = this.ctx.storage.kv.get<RoomState>("room");
+    // A pick that died with the object (a restart mid-settle) must not leave the room stuck.
+    if (room?.phase === "settling" && !this.settling) {
+      room.phase = "lobby";
+      room.notice = "PICK_FAILED";
+      this.save(room);
+    }
+    return room;
+  }
   private save = (room: RoomState) => this.ctx.storage.kv.put("room", room);
   private catalog = () => this.env.CATALOG.getByName("catalog");
 
@@ -125,6 +146,8 @@ export class Room extends DurableObject<Env> {
     // The first frame must be join or resume.
     if (!att) return bad();
     if (msg.type === "ping") return this.send(ws, { type: "pong" });
+    if (msg.type === "settle") return this.settle(ws, att.memberId);
+    if (msg.type === "reopen") return this.reopen(ws, att.memberId);
 
     // Catalog lookups come first: nothing may await between loading the room and saving it.
     let countries: Countries | undefined;
@@ -182,6 +205,56 @@ export class Room extends DurableObject<Env> {
       const other = sock.deserializeAttachment() as Attachment;
       if (other && (everyone || other.memberId === att.memberId)) this.send(sock, { type: "you", you: you(room.members[other.memberId]) });
     }
+    this.broadcast(room);
+  }
+
+  /** Host only: run the pick for the ready members. The phase is saved before the first await, so a second settle is refused. */
+  private async settle(ws: WebSocket, memberId: string) {
+    const refuse = (code: ErrorCode) => this.send(ws, { type: "error", code });
+    const room = this.load()!;
+    if (memberId !== room.hostId) return refuse("NOT_HOST");
+    const voters: Voter[] = Object.entries(room.members)
+      .filter(([, m]) => m.ready && m.answers)
+      .map(([id, m]) => ({ id, answers: m.answers!, favourites: m.favourites }));
+    if (room.phase !== "lobby" || voters.length < LIMITS.minReady || room.settleAttempts >= LIMITS.settleAttempts) {
+      return refuse("WRONG_PHASE");
+    }
+
+    room.phase = "settling";
+    room.settleAttempts += 1;
+    delete room.notice;
+    this.save(room);
+    this.broadcast(room);
+
+    this.settling = true;
+    const catalog = this.catalog();
+    const outcome = await pick(room.region, voters, (query) => catalog.candidates(query))
+      .catch(() => ({ ok: false, notice: "PICK_FAILED" }) as const);
+
+    const after = this.load(); // the room may have expired while the pick ran
+    this.settling = false; // only after loading: `load` treats "settling with no pick running" as a crash
+    if (!after || after.phase !== "settling") return;
+    if (outcome.ok) {
+      after.phase = "result";
+      after.result = { ranking: outcome.ranking, index: 0, pool: outcome.pool, source: "fallback", vetoes: [], exhausted: false };
+    } else {
+      after.phase = "lobby";
+      after.notice = outcome.notice;
+      refuse(outcome.notice);
+    }
+    this.save(after);
+    this.broadcast(after);
+  }
+
+  /** Host only: back to the lobby after a result. Answers and films stay; ready stamps and vetoes are cleared. */
+  private reopen(ws: WebSocket, memberId: string) {
+    const room = this.load()!;
+    if (memberId !== room.hostId) return this.send(ws, { type: "error", code: "NOT_HOST" });
+    if (room.phase !== "result") return this.send(ws, { type: "error", code: "WRONG_PHASE" });
+    room.phase = "lobby";
+    delete room.result;
+    for (const m of Object.values(room.members)) { m.ready = false; m.vetoUsed = false; }
+    this.save(room);
     this.broadcast(room);
   }
 
@@ -262,11 +335,20 @@ export class Room extends DurableObject<Env> {
       const att = ws.deserializeAttachment() as Attachment;
       if (att && ws !== gone) connected.add(att.memberId);
     }
+    const pick = room.result?.ranking[room.result.index];
     return {
       code: room.code, region: room.region, phase: room.phase, expiresAt: room.expiresAt, hostId: room.hostId,
       members: Object.entries(room.members).map(([id, m]) => ({
         id, nickname: m.nickname, ready: m.ready, connected: connected.has(id), vetoUsed: m.vetoUsed,
       })),
+      settlesLeft: LIMITS.settleAttempts - room.settleAttempts,
+      notice: room.notice,
+      // Only the current pick leaves the room: never the rest of the ranking, the pool, ratings or cast.
+      pick: pick && {
+        movieId: pick.movieId, title: pick.title, year: pick.year, poster: pick.poster,
+        runtime: pick.runtime, services: pick.services, reasons: pick.reasons,
+      },
+      exhausted: room.result?.exhausted || undefined,
     };
   }
 

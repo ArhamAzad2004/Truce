@@ -1,6 +1,6 @@
 // Sample data used when MOTN_API_KEY is not set (local dev, tests, CI). Hand-written, not copied from the API.
 import { LIMITS } from "../shared/limits";
-import type { Favourite } from "../shared/protocol";
+import type { Favourite, Film } from "../shared/protocol";
 import type { Countries, Source } from "./motn";
 
 const S = (id: string, name: string) => ({ id, name });
@@ -17,6 +17,15 @@ const COUNTRIES: Countries = {
 
 const F = (id: string, title: string, year: number, genres: string, director: string, cast: string): Favourite =>
   ({ id, title, year, poster: null, genres: genres.split(" "), directors: [director], cast: cast.split(", ") });
+
+// Made-up but stable: runtime, rating and where each sample film "streams" follow from its position in the list.
+const ALL = [netflix, prime, apple, disney, mubi, hulu, max, zee5, hotstar, iplayer];
+const asFilm = (f: Favourite, i: number): Film => ({
+  movieId: f.id, title: f.title, year: f.year!, poster: null,
+  runtime: 88 + ((i * 13) % 75), rating: 62 + ((i * 7) % 33),
+  genres: f.genres, directors: f.directors, cast: f.cast,
+  services: [ALL[i % 2], ALL[2 + (i % 8)]], // Netflix or Prime, plus one other
+});
 
 const FILMS = [
   F("fx1", "The Godfather", 1972, "crime drama", "Francis Ford Coppola", "Marlon Brando, Al Pacino, James Caan"),
@@ -56,4 +65,13 @@ const FILMS = [
 export const fixtures: Source = {
   countries: async () => COUNTRIES,
   search: async (query) => FILMS.filter((f) => f.title.toLowerCase().includes(query)).slice(0, LIMITS.searchResults),
+  // One page, best-rated first; only services that exist in the country and were asked for.
+  candidates: async ({ country, serviceIds, genres }) => {
+    const here = new Set((COUNTRIES[country]?.services ?? []).map((s) => s.id).filter((id) => serviceIds.includes(id)));
+    const films = FILMS.map(asFilm)
+      .map((f) => ({ ...f, services: f.services.filter((s) => here.has(s.id)) }))
+      .filter((f) => f.services.length && (!genres.length || f.genres.some((g) => genres.includes(g))))
+      .sort((a, b) => b.rating - a.rating);
+    return { films, nextCursor: null };
+  },
 };

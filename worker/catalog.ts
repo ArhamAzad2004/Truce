@@ -2,7 +2,7 @@ import { DurableObject } from "cloudflare:workers";
 import { cleanQuery } from "../shared/limits";
 import type { Favourite, FilmRow, QuotaScope } from "../shared/protocol";
 import { fixtures } from "./fixtures";
-import { type Countries, QuotaError, type Source, live } from "./motn";
+import { type CandidatePage, type CandidateQuery, type Countries, QuotaError, type Source, live } from "./motn";
 
 export type Fail = { ok: false; error: "QUOTA_REACHED"; scope: QuotaScope } | { ok: false; error: "UPSTREAM" };
 type QuotaFail = Extract<Fail, { error: "QUOTA_REACHED" }>;
@@ -12,6 +12,7 @@ const DAY = 24 * 60 * 60 * 1000;
 const CAPS = { month: 950, day: 120, searchDay: 100 }; // search stops early so open rooms can still settle
 const COUNTRIES_TTL = 7 * DAY;
 const SEARCH_TTL = 30 * DAY;
+const CANDIDATES_TTL = DAY;
 const BACKOFF = 6 * 60 * 60 * 1000; // after the API itself says the allowance is gone
 
 const row = ({ id, title, year, poster }: Favourite): FilmRow => ({ id, title, year, poster });
@@ -85,6 +86,18 @@ export class Catalog extends DurableObject<Env> {
     }).finally(() => this.inflight.delete(query));
     this.inflight.set(query, request);
     return request;
+  }
+
+  /** One page of streamable films for a settle. The same question within 24 hours costs nothing. */
+  async candidates(query: CandidateQuery): Promise<Result<CandidatePage>> {
+    const normal = { ...query, serviceIds: [...query.serviceIds].sort(), genres: [...query.genres].sort() };
+    // shortcut: old pages are never deleted (about 25 KB each); add a sweep if the object nears its storage limit.
+    const key = `c:${JSON.stringify(normal)}`;
+    const hit = this.kv.get<{ at: number; page: CandidatePage }>(key);
+    if (hit && Date.now() - hit.at < CANDIDATES_TTL) return { ok: true, data: hit.page };
+    const fresh = await this.call("other", () => this.source().candidates(normal));
+    if (fresh.ok) this.kv.put(key, { at: Date.now(), page: fresh.data });
+    return fresh;
   }
 
   /** Film records seen in an earlier search. Never calls upstream; an unknown id is `null`. */

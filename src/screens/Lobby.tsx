@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { encode } from "uqr";
-import type { PublicState, Region, You } from "../../shared/protocol";
+import { LIMITS } from "../../shared/limits";
+import type { Notice, PublicState, Region, You } from "../../shared/protocol";
 import type { RoomError } from "../useRoom";
 import "./Lobby.css";
 
@@ -23,11 +24,19 @@ const regionName = (code: string) => {
 };
 
 function errorCopy(error: RoomError) {
-  if (error.code === "QUOTA_REACHED") {
-    return `Truce is resting. We've used up ${error.scope === "day" ? "today's film lookups. Back tomorrow." : "this month's film lookups. Back next month."}`;
-  }
+  if (error.code === "QUOTA_REACHED") return resting(error.scope);
   if (error.code === "PICK_FAILED") return "The film listings didn't answer. Try again in a minute.";
   return "That didn't save. Try again.";
+}
+
+const resting = (scope?: string) =>
+  `Truce is resting. We've used up ${scope === "day" ? "today's film lookups. Back tomorrow." : "this month's film lookups. Back next month."}`;
+
+// Why the last settle failed. Everyone sees it.
+function noticeCopy(notice: Notice, isHost: boolean) {
+  if (notice === "NO_CANDIDATES") return "Nothing fits everyone yet. Loosen a filter: more time, another service, or a different region.";
+  if (notice === "QUOTA_REACHED") return "Truce is resting. The film lookups are used up for now. Try again later.";
+  return isHost ? "The film listings didn't answer. Try again in a minute." : "The film listings didn't answer. The host can try again.";
 }
 
 type Props = {
@@ -38,9 +47,10 @@ type Props = {
   reconnecting: boolean;
   onPick: () => void;
   onRegion: (region: string) => void;
+  onSettle: () => void;
 };
 
-export function Lobby({ state, memberId, you, error, reconnecting, onPick, onRegion }: Props) {
+export function Lobby({ state, memberId, you, error, reconnecting, onPick, onRegion, onSettle }: Props) {
   const [copied, setCopied] = useState<"yes" | "failed" | null>(null);
   const [regions, setRegions] = useState<Region[] | "loading" | "failed" | null>(null);
   const link = `${location.origin}/r/${state.code}`;
@@ -49,6 +59,7 @@ export function Lobby({ state, memberId, you, error, reconnecting, onPick, onReg
   const host = state.members.find((m) => m.id === state.hostId);
   const readyCount = state.members.filter((m) => m.ready).length;
   const regionChanged = you.answers?.serviceIds.length === 0;
+  const canSettle = readyCount >= LIMITS.minReady && state.settlesLeft > 0;
 
   const copy = async () => {
     try { await navigator.clipboard.writeText(link); setCopied("yes"); } catch { setCopied("failed"); }
@@ -71,7 +82,9 @@ export function Lobby({ state, memberId, you, error, reconnecting, onPick, onReg
       </header>
 
       {reconnecting && <p className="strip" role="status">Lost the signal. Reconnecting…</p>}
-      {error && <p className="strip" role="alert">{errorCopy(error)}</p>}
+      {state.notice
+        ? <p className="strip" role="alert">{noticeCopy(state.notice, isHost)}</p>
+        : error && <p className="strip" role="alert">{errorCopy(error)}</p>}
 
       <h1 className="title">Box office is open.</h1>
 
@@ -142,10 +155,13 @@ export function Lobby({ state, memberId, you, error, reconnecting, onPick, onReg
           : <button className="btn btn-primary" type="button" onClick={onPick}>{you.answers ? "Finish my picks" : "Start my picks"}</button>}
         {isHost ? (
           <>
-            {/* shortcut: the pick itself arrives in Phase 6; until then the button only shows when it would open. */}
-            <button className="btn btn-primary" type="button" aria-disabled="true">Settle it</button>
+            <button className="btn btn-primary" type="button" aria-disabled={!canSettle} onClick={() => canSettle && onSettle()}>
+              Settle it
+            </button>
             <p className="note">
-              {readyCount < 2 ? "Settle it opens when two of you are ready." : "Enough of you are ready. Settling arrives in the next build."}
+              {state.settlesLeft <= 0 ? "This room has had its five tries. Open a new one."
+                : readyCount < LIMITS.minReady ? "Settle it opens when two of you are ready."
+                : `${readyCount} are ready. The lights go down when you tap.`}
             </p>
           </>
         ) : me?.ready ? (

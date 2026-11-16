@@ -32,6 +32,8 @@ export const ClientMessage = z.discriminatedUnion("type", [
   }),
   z.strictObject({ type: z.literal("setReady"), ready: z.boolean() }),
   z.strictObject({ type: z.literal("setRegion"), region: z.string().regex(/^[A-Z]{2}$/) }),
+  z.strictObject({ type: z.literal("settle") }),
+  z.strictObject({ type: z.literal("reopen") }),
   z.strictObject({ type: z.literal("ping") }),
 ]);
 export type ClientMessage = z.infer<typeof ClientMessage>;
@@ -41,7 +43,10 @@ export type QuotaScope = "day" | "month";
 
 export type ErrorCode =
   | "BAD_MESSAGE" | "ROOM_FULL" | "NAME_TAKEN" | "NOT_HOST" | "WRONG_PHASE" | "RATE_LIMITED" | "EXPIRED"
-  | "PICK_FAILED" | "QUOTA_REACHED";
+  | "NO_CANDIDATES" | "PICK_FAILED" | "QUOTA_REACHED";
+
+/** Why the last settle failed. Everyone sees it; cleared when the next settle starts. */
+export type Notice = "NO_CANDIDATES" | "PICK_FAILED" | "QUOTA_REACHED";
 
 export type Service = { id: string; name: string };
 export type Region = { code: string; name: string };
@@ -51,6 +56,19 @@ export type FilmRow = { id: string; title: string; year: number | null; poster: 
 /** What the room keeps for a favourite; copied from the Catalog, never from the client. */
 export type Favourite = FilmRow & { genres: string[]; directors: string[]; cast: string[] };
 
+/** One candidate, already trimmed. `services` = subscription or free options in the room's region. */
+export type Film = {
+  movieId: string; title: string; year: number; poster: string | null;
+  runtime: number; rating: number; genres: string[]; directors: string[]; cast: string[];
+  services: Service[];
+};
+
+/** The current pick as clients see it. `reasons` is keyed by member id. */
+export type PickView = {
+  movieId: string; title: string; year: number; poster: string | null;
+  runtime: number; services: Service[]; reasons: Record<string, string>;
+};
+
 export type PublicState = {
   code: string;
   region: string;
@@ -58,6 +76,10 @@ export type PublicState = {
   expiresAt: number;
   hostId: string | null;
   members: { id: string; nickname: string; ready: boolean; connected: boolean; vetoUsed: boolean }[];
+  settlesLeft: number;
+  notice?: Notice;
+  pick?: PickView;
+  exhausted?: boolean;
 };
 
 /** A member's own private data. Only ever sent to that member. */

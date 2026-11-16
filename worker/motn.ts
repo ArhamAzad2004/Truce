@@ -2,10 +2,22 @@
 // Everything not named in a schema below (overview included) is dropped before anything is cached.
 import { z } from "zod";
 import { FILM_ID_RE, LIMITS, SERVICE_ID_RE } from "../shared/limits";
-import type { Favourite, Service } from "../shared/protocol";
+import type { Favourite, Film, Service } from "../shared/protocol";
 
 export type Countries = Record<string, { name: string; services: Service[] }>; // key = upper-case country code
-export type Source = { countries(): Promise<Countries>; search(query: string): Promise<Favourite[]> };
+export type CandidateQuery = {
+  country: string; // upper case
+  serviceIds: string[];
+  genres: string[]; // empty = any genre
+  orderBy: "popularity_1year" | "popularity_alltime";
+  cursor?: string;
+};
+export type CandidatePage = { films: Film[]; nextCursor: string | null };
+export type Source = {
+  countries(): Promise<Countries>;
+  search(query: string): Promise<Favourite[]>;
+  candidates(query: CandidateQuery): Promise<CandidatePage>;
+};
 
 /** The API says the request allowance is used up. */
 export class QuotaError extends Error {}
@@ -22,6 +34,12 @@ const Show = z.object({
   directors: z.array(z.string()).default([]),
   cast: z.array(z.string()).default([]),
   imageSet: z.object({ verticalPoster: z.record(z.string(), z.string()).optional() }).optional(),
+  runtime: z.number().optional(),
+  rating: z.number().optional(),
+  streamingOptions: z.record(z.string(), z.array(z.object({
+    service: z.object({ id: z.string(), name: z.string() }),
+    type: z.string(),
+  }))).optional(),
 });
 
 const Country = z.object({
@@ -39,26 +57,69 @@ function poster(url: string | undefined) {
   try { return url && new URL(url).protocol === "https:" && new URL(url).hostname === POSTER_HOST ? url : null; } catch { return null; }
 }
 
-/** Movies only, trimmed to the fields Truce keeps. Entries that don't fit the schema are skipped. */
-export function parseShows(body: unknown): Favourite[] {
+/**
+ * Movies only, trimmed to the fields Truce keeps. Entries that don't fit the schema are skipped.
+ * Titles containing the whole query come first, best-rated first, so a well-known film beats an obscure namesake.
+ */
+export function parseShows(body: unknown, query = ""): Favourite[] {
   if (!Array.isArray(body)) return [];
-  const films: Favourite[] = [];
+  const found: { film: Favourite; rank: number }[] = [];
   for (const item of body) {
     const show = Show.safeParse(item);
     if (!show.success || (show.data.showType && show.data.showType !== "movie")) continue;
     const s = show.data;
+    const title = clean(s.title, 120);
+    found.push({
+      rank: query && title.toLowerCase().includes(query) ? 1000 + (s.rating ?? 0) : 0,
+      film: {
+        id: s.id,
+        title,
+        year: s.releaseYear ?? null,
+        poster: poster(s.imageSet?.verticalPoster?.w240),
+        genres: s.genres.map((g) => g.id).slice(0, 8),
+        directors: s.directors.map((d) => clean(d, 80)).slice(0, 3),
+        cast: s.cast.map((c) => clean(c, 80)).slice(0, 5),
+      },
+    });
+  }
+  // Array.prototype.sort is stable: the API's order is kept within each rank.
+  return found.sort((a, b) => b.rank - a.rank).slice(0, LIMITS.searchResults).map((f) => f.film);
+}
+
+const Page = z.object({ shows: z.array(z.unknown()), hasMore: z.boolean().optional(), nextCursor: z.string().optional() });
+
+/** One page of the filtered search, for `country`. Films missing a year, runtime or rating are skipped. */
+export function parseCandidates(body: unknown, country: string): CandidatePage {
+  const page = Page.safeParse(body);
+  if (!page.success) return { films: [], nextCursor: null };
+  const films: Film[] = [];
+  for (const item of page.data.shows) {
+    const show = Show.safeParse(item);
+    if (!show.success || (show.data.showType && show.data.showType !== "movie")) continue;
+    const s = show.data;
+    if (!s.releaseYear || !s.runtime || s.rating === undefined) continue;
+    const services = new Map<string, Service>();
+    for (const option of s.streamingOptions?.[country.toLowerCase()] ?? []) {
+      // Rent, buy and add-on options never count as streamable.
+      if ((option.type === "subscription" || option.type === "free") && SERVICE_ID_RE.test(option.service.id)) {
+        services.set(option.service.id, { id: option.service.id, name: clean(option.service.name, 40) });
+      }
+    }
+    const posters = s.imageSet?.verticalPoster;
     films.push({
-      id: s.id,
+      movieId: s.id,
       title: clean(s.title, 120),
-      year: s.releaseYear ?? null,
-      poster: poster(s.imageSet?.verticalPoster?.w240),
+      year: s.releaseYear,
+      poster: poster(posters?.w360) ?? poster(posters?.w480) ?? poster(posters?.w240),
+      runtime: s.runtime,
+      rating: s.rating,
       genres: s.genres.map((g) => g.id).slice(0, 8),
       directors: s.directors.map((d) => clean(d, 80)).slice(0, 3),
       cast: s.cast.map((c) => clean(c, 80)).slice(0, 5),
+      services: [...services.values()],
     });
-    if (films.length === LIMITS.searchResults) break;
   }
-  return films;
+  return { films, nextCursor: page.data.hasMore && page.data.nextCursor ? page.data.nextCursor : null };
 }
 
 /** Countries with the services that offer subscription or free viewing, in the API's order. */
@@ -90,5 +151,17 @@ async function get(key: string, path: string, params: Record<string, string> = {
 export const live = (key: string): Source => ({
   countries: async () => parseCountries(await get(key, "/countries")),
   search: async (query) =>
-    parseShows(await get(key, "/shows/search/title", { title: query, country: "us", show_type: "movie", series_granularity: "show" })),
+    parseShows(await get(key, "/shows/search/title", { title: query, country: "us", show_type: "movie", series_granularity: "show" }), query),
+  candidates: async ({ country, serviceIds, genres, orderBy, cursor }) => {
+    const params: Record<string, string> = {
+      country: country.toLowerCase(),
+      catalogs: serviceIds.flatMap((id) => [`${id}.subscription`, `${id}.free`]).join(","),
+      show_type: "movie",
+      rating_min: "60",
+      order_by: orderBy,
+    };
+    if (genres.length) { params.genres = genres.join(","); params.genres_relation = "or"; }
+    if (cursor) params.cursor = cursor;
+    return parseCandidates(await get(key, "/shows/search/filters", params), country);
+  },
 });

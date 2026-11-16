@@ -66,6 +66,7 @@ type Room = {
 type PublicState = {
   code: string; region: string; phase: Room["phase"]; expiresAt: number; hostId: string | null;
   members: { id: string; nickname: string; ready: boolean; connected: boolean; vetoUsed: boolean }[];
+  settlesLeft: number;          // 5 minus the attempts used
   notice?: Room["notice"];
   pick?: { movieId: string; title: string; year: number; poster: string | null;
            runtime: number; services: Service[]; reasons: Record<string, string> };  // ranking[index] only
@@ -91,7 +92,7 @@ All under the app's own origin. JSON in and out. Errors are `{ "error": "<CODE>"
 - `POST /api/rooms` generates the code and host token with `crypto.getRandomValues`, sets `region` from `request.cf.country` (falls back to `US` when the country is missing, not supported by MOTN, or the country list could not be loaded), initialises the room and sets the expiry alarm. It answers 503 `QUOTA_REACHED` while the data quota is used up, so nobody opens a room that cannot finish.
 - A browser cannot read the status of a failed WebSocket handshake. When a socket never opens, the client sends a plain `GET` to the same path: 404 means "no such room", 426 means the room exists and the failure was the network.
 - The Origin check compares the `Origin` header with the origin of the request URL, so there is no allow-list to configure. It applies to upgrades only.
-- Search results keep MOTN's own order, which favours exact title matches over well-known films ("godfather" lists *The Godfather* seventh). Typing more of the title fixes it.
+- Search results: titles that contain the whole query come first, best-rated first; the rest keep MOTN's order. (MOTN alone lists obscure exact matches above well-known films.) A query cached before this rule keeps its old order for 30 days.
 - Search, regions and services are trimmed views served by the Catalog object (section 7). No MOTN key and no raw MOTN response reaches the client.
 - `QUOTA_REACHED` bodies carry `"scope": "day"` or `"month"` so the client can say when Truce is back.
 - API responses send `Cache-Control: no-store` (except search, regions and services: `public, max-age=3600`) and `X-Content-Type-Options: nosniff`.
@@ -208,7 +209,7 @@ POST /api/rooms ──► lobby ──settle──► settling ──► result 
 - **Unknown code:** the object finds no `room` key, answers 404 and writes nothing.
 - **Join:** lobby only. The host's first frame is `join {nickname, hostToken}`.
 - **Editing:** `setAnswers` and `setFavourites` clear that member's `ready`. `setRegion` clears everyone's `serviceIds` and `ready`.
-- **Settle:** `phase = "settling"` and `settleAttempts + 1` are stored **before** the first `await`, so a second `settle` arriving while calls are in flight gets `WRONG_PHASE`. A failure stores `phase = "lobby"` plus `notice`; the host may try again.
+- **Settle:** `phase = "settling"` and `settleAttempts + 1` are stored **before** the first `await`, so a second `settle` arriving while calls are in flight gets `WRONG_PHASE`. A failure stores `phase = "lobby"` plus `notice`; the host may try again. If the object restarts mid-settle, the next load finds `settling` with no pick running and returns the room to `lobby` with `PICK_FAILED`.
 - **Reopen:** host only, from `result`. Clears `result`, every `ready` and every `vetoUsed`.
 - **Disconnect:** closing a socket only changes `connected`. The member, their answers and their veto remain until expiry. The host can resume with their token; host rights never transfer.
 - **Alarm:** set `phase = "closed"` (a transient phase, seen only by sockets open at that moment), send `error EXPIRED`, close every socket with 4000, then `ctx.storage.deleteAll()`. After that the code returns 404.
@@ -258,7 +259,7 @@ Runs inside the room's `settle` handler, for the ready members only.
 7. **AI rank** (section 9), or the fallback (section 10).
 8. Store `result`, `phase = "result"`, broadcast.
 
-Failures: the Catalog returns `QUOTA_REACHED` → if at least 10 films are already in hand, carry on with them; otherwise back to `lobby` with that notice. Any other Catalog or network error with no films in hand → `PICK_FAILED`.
+Failures: a Catalog call fails → if at least 10 films have already survived the filters, carry on with them; otherwise back to `lobby` with `QUOTA_REACHED` or `PICK_FAILED`. After a failure no further calls are made in that settle. The ladder ends in `NO_CANDIDATES` only when nothing at all survives; one or two survivors are still a pick.
 
 ## 9. AI contract
 
