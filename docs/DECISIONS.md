@@ -87,7 +87,7 @@ Items marked **[verify]** rest on a provider's terms or limits and must be check
 
 **Context.** The ranking step needs a fast LLM with structured JSON output, at $0.
 
-**Decision.** Call Groq's free tier using the `openai` SDK pointed at Groq's OpenAI-compatible endpoint. Provider, model and key come from `AI_BASE_URL`, `AI_MODEL` and `AI_API_KEY`, so switching provider is a config change, not a code change.
+**Decision.** Call Groq's free tier at its OpenAI-compatible endpoint (first planned through the `openai` SDK; replaced by a plain `fetch` in 019). Provider, model and key come from `AI_BASE_URL`, `AI_MODEL` and `AI_API_KEY`, so switching provider is a config change, not a code change.
 
 **Alternatives considered.**
 - *Paid OpenAI.* Breaks the $0 rule.
@@ -165,7 +165,7 @@ Items marked **[verify]** rest on a provider's terms or limits and must be check
 
 **Context.** Every package is code to audit, update and trust. The app has six screens and one live connection.
 
-**Decision.** Runtime dependencies are `react`, `openai`, `zod` and one zero-dependency QR library. No router, no state library, no UI kit, no Tailwind: screens switch on the room phase, state lives in one reducer, styles are plain CSS with the brand tokens.
+**Decision.** Runtime dependencies are `react`, `zod` and one zero-dependency QR library (`openai` was dropped in 019). No router, no state library, no UI kit, no Tailwind: screens switch on the room phase, state lives in one reducer, styles are plain CSS with the brand tokens.
 
 **Alternatives considered.**
 - *React Router, Zustand/Redux, a component kit, Tailwind.* Each saves a little code and adds weight, upgrades and supply-chain risk; a UI kit also pulls the look toward generic.
@@ -287,3 +287,15 @@ Items marked **[verify]** rest on a provider's terms or limits and must be check
 - *Hotlinked Google Fonts.* Less setup, but a third party would see every visitor and the policy would need two more hosts.
 
 **Consequences.** No dead-end screens: every failure leads back to the lobby with a next step. Error codes now include `VETO_USED`, `NO_CANDIDATES`, `PICK_FAILED` and `QUOTA_REACHED`. The 5-attempt cap is a starting value.
+
+## 019. No SDK for the AI call
+**Date:** 2026-11-16
+
+**Context.** The AI step is one request: a shortlist goes out, a ranking comes back. The plan named the `openai` npm package for it.
+
+**Decision.** Send the request with the platform's `fetch` to `{AI_BASE_URL}/chat/completions`. The request and response shapes are the OpenAI-compatible ones Groq documents, with strict `json_schema` output.
+
+**Alternatives considered.**
+- *The `openai` package.* Typed and familiar, but a large dependency in the Worker for one call, and one more package to audit. Its automatic retries would also have to be switched off to keep the single 12-second deadline.
+
+**Consequences.** One less dependency. Switching provider is still three settings (`AI_BASE_URL`, `AI_MODEL`, `AI_API_KEY`) as long as the provider speaks the same format. Truce owns the timeout, the single retry and the response check itself (`worker/pick/ai.ts`), all covered by tests with a fake `fetch`.

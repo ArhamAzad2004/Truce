@@ -16,7 +16,7 @@ Full reasoning goes in `DECISIONS.md` (Phase 2).
 - **The Durable Object owns the state machine** and persists one JSON blob (`ctx.storage.put("room", state)`), one row write per mutation. No SQL schema.
 - **Room code:** 10-char Crockford base32 from `crypto.getRandomValues` (50 bits). DO addressed with `idFromName(code)`; unknown codes return 404 and write nothing.
 - **Identity:** 128-bit random member token on join, kept in `sessionStorage`, sent in the first WS message (never in a URL).
-- **Minimal dependencies:** `react`, `openai`, `zod`, one zero-dependency QR library (e.g. `uqr`). No router, no state library, no UI kit, plain CSS with tokens.
+- **Minimal dependencies:** `react`, `zod`, one zero-dependency QR library (e.g. `uqr`). No router, no state library, no UI kit, plain CSS with tokens.
 - **Tooling:** `@cloudflare/vite-plugin` (one `npm run dev` for client + Worker + DO), Vitest with `@cloudflare/vitest-pool-workers`.
 
 ## Phases
@@ -81,9 +81,9 @@ Full reasoning goes in `DECISIONS.md` (Phase 2).
 - **Done when:** end-to-end flow gives one streamable pick with template reasons using 3 MOTN requests (5 at most) and at most 8 subrequests.
 
 ### Phase 7 — Slice 5: AI pick · Fable 5.2
-- [ ] Groq via `openai` SDK (`AI_BASE_URL`, `AI_MODEL`, `AI_API_KEY`; unset key = step skipped), prompt contract, `json_schema` strict, zod validation, one retry inside one shared 12 s deadline, fallback on any failure.
-- [ ] Tests with a mocked client: valid, hallucinated ID, missing member, over-long reason, 429, timeout, deadline spent.
-- [ ] Test that the prompt holds no overview, cast, nickname or token (MOTN terms: minimum data, inference only). The terms question that blocked this phase is closed by `DECISIONS.md` 016.
+- [x] Groq via one `fetch` to its OpenAI-compatible endpoint, no SDK (`AI_BASE_URL`, `AI_MODEL`, `AI_API_KEY`; unset key = step skipped), prompt contract, `json_schema` strict, zod validation, one retry inside one shared 12 s deadline, fallback on any failure.
+- [x] Tests with a fake `fetch`: valid, hallucinated ID, missing member, over-long reason, 429, timeout, deadline spent.
+- [x] Test that the prompt holds no overview, cast, nickname or token (MOTN terms: minimum data, inference only). The terms question that blocked this phase is closed by `DECISIONS.md` 016.
 - **Done when:** valid AI ranking replaces the deterministic one; every failure silently yields the Phase 6 result; provider switch is env-only.
 
 ### Phase 8 — Slice 6: veto and edge states · Opus 5.5, Fable 5.2 review

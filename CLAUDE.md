@@ -17,7 +17,7 @@ A group can't agree on a movie. Each person joins a room from a link or QR code 
 - `npm i`, then `npm run dev` (Vite + Worker + Durable Object together via `@cloudflare/vite-plugin`), `npm test` (Vitest + workers pool), `npx wrangler deploy`.
 - Setup for a fresh machine, keys and global vs project Claude config: `docs/SETUP.md`.
 
-## Code map (rooms, inputs and the deterministic pick built; AI ranking and veto are planned)
+## Code map (rooms, inputs, the pick and the AI ranking built; the veto is planned)
 - `shared/` — zod schemas for WS messages, API bodies and enums (`protocol.ts`), limits (`limits.ts`). Single source of truth for `docs/BACKEND_SCHEMA.md`.
 - `worker/index.ts` — routing, rate limits, Origin check. `worker/room.ts` — Room Durable Object (state machine, hibernation, alarm expiry). `worker/motn.ts` — Streaming Availability API client, called only from the `Catalog` Durable Object (single caller: cache + daily/monthly quota counters). With no `MOTN_API_KEY` set it answers from `worker/fixtures.ts` (sample data), so dev, tests and CI spend no quota. `worker/pick/` — candidates → score → AI → validate → fallback.
 - `src/` — React client: `useRoom.ts` (WS + reconnect), `screens/` (Landing, Nickname, Lobby, QuickTaps, Favourites, Reveal with Settling), `styles/tokens.css` from `docs/DESIGN_BRIEF.md`.

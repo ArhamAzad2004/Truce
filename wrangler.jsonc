@@ -15,5 +15,10 @@
     ]
   },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room", "Catalog"] }],
+  // Any OpenAI-compatible endpoint works. The key is the secret AI_API_KEY; without it the AI step is skipped.
+  "vars": {
+    "AI_BASE_URL": "https://api.groq.com/openai/v1",
+    "AI_MODEL": "openai/gpt-oss-20b"
+  },
   "observability": { "enabled": true }
 }

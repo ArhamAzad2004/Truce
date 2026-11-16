@@ -7,6 +7,7 @@ import {
 import type { Fail } from "./catalog";
 import type { Countries } from "./motn";
 import { type Ranked, type Voter, pick } from "./pick";
+import { rank } from "./pick/ai";
 
 type Member = {
   nickname: string;
@@ -230,13 +231,21 @@ export class Room extends DurableObject<Env> {
     const catalog = this.catalog();
     const outcome = await pick(room.region, voters, (query) => catalog.candidates(query))
       .catch(() => ({ ok: false, notice: "PICK_FAILED" }) as const);
+    // No key = the AI step is off (kill switch). Any failure inside it also leaves the deterministic ranking.
+    const apiKey = (this.env as { AI_API_KEY?: string }).AI_API_KEY;
+    const ai = outcome.ok && apiKey
+      ? await rank(outcome.ranking, voters, { apiKey, baseUrl: this.env.AI_BASE_URL, model: this.env.AI_MODEL }).catch(() => null)
+      : null;
 
     const after = this.load(); // the room may have expired while the pick ran
     this.settling = false; // only after loading: `load` treats "settling with no pick running" as a crash
     if (!after || after.phase !== "settling") return;
     if (outcome.ok) {
       after.phase = "result";
-      after.result = { ranking: outcome.ranking, index: 0, pool: outcome.pool, source: "fallback", vetoes: [], exhausted: false };
+      after.result = {
+        ranking: ai ?? outcome.ranking, index: 0, pool: outcome.pool,
+        source: ai ? "ai" : "fallback", vetoes: [], exhausted: false,
+      };
     } else {
       after.phase = "lobby";
       after.notice = outcome.notice;

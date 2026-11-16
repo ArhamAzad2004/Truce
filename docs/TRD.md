@@ -26,7 +26,7 @@ flowchart LR
   W -- "search, regions, services" --> CAT
   DO -- "film records, candidates" --> CAT
   CAT -- "countries, title search, filter search" --> MOTN
-  DO -- "one ranking call (openai SDK)" --> GROQ
+  DO -- "one ranking call (HTTPS, OpenAI-compatible)" --> GROQ
   UI -- "poster images" --> IMG
 ```
 
@@ -45,7 +45,7 @@ The **Catalog** is one shared Durable Object. It is the only place that calls MO
 | One Catalog Durable Object | A global cache and an exact request counter without adding another storage product | One code path holds the data key's use; the caps cannot be raced |
 | `@cloudflare/vite-plugin` | One `npm run dev` runs client, Worker and both objects together | Dev matches production runtime |
 | `zod` | One schema validates messages and generates the types | Every inbound message, every MOTN response and every AI output is validated |
-| `openai` SDK pointed at Groq | Provider switch is three env vars | Key never leaves the Worker |
+| One `fetch` to Groq's OpenAI-compatible endpoint (no SDK, see `DECISIONS.md` 019) | Provider switch is three env vars | Key never leaves the Worker |
 | Groq `openai/gpt-oss-20b` | Free tier, fast, supports strict JSON schema output | Receives no personal data, no free text and no film descriptions |
 | Streaming Availability API (MOTN) | Films and per-country streaming options in one call; terms allow this use, including sending a shortlist to a model for ranking, and allow caching | Films are copied from the server's cache by id, never trusted from the client; its terms bar training or evaluating models on the data, which Truce does not do |
 | `uqr` (or similar zero-dependency QR) | QR drawn locally | Room link is not sent to a QR service |
@@ -152,7 +152,7 @@ Vitest with `@cloudflare/vitest-pool-workers`, so tests run in the real Workers 
 | Room integration | The `Room` object through its real interface | Join with and without `hostToken`, resume, duplicate nickname, room full, bad message, wrong phase, join after lobby, non-host settle, veto once, reopen, region change clears services, expiry alarm, double-settle race, failed settle returns to lobby |
 | Catalog integration | The `Catalog` object with a mocked `fetch` | Cache hit costs no fetch; daily and monthly caps; search cap leaves the settle reserve; upstream 429 opens the 6 h pause; unknown film id returns nothing |
 | Fixtures | Recorded MOTN JSON, trimmed, in `test/fixtures/` | Deterministic pick end to end with no network |
-| AI client | Mocked `openai` client | Valid, hallucinated id, missing member, over-long reason, 429, timeout, deadline spent before the retry |
+| AI client | Injected fake `fetch` | Valid, hallucinated id, missing member, over-long reason, 429, timeout, deadline spent before the retry |
 
 Not yet: Playwright or any browser end-to-end test. The phone flow is checked by hand (two phones in Phase 4, three in Phase 10). Tests never call MOTN or Groq.
 

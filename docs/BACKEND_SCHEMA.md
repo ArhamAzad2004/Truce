@@ -192,7 +192,7 @@ A failed settle sends the `error` to the host's socket and also sets `notice` in
 | Room TTL | 4 h from creation |
 | MOTN requests per settle | 3 normally, at most 5 with the relaxation ladder |
 | Subrequests per settle | ≤ 8 from the room (≤ 6 Catalog calls + ≤ 2 AI calls); platform limit 50, see [TRD §10](TRD.md#10-verified-platform-facts) |
-| AI call | One shared 12 s deadline across the attempt and its one retry; `maxRetries: 0` in the SDK |
+| AI call | One shared 12 s deadline across the attempt and its one retry; no other retries |
 | MOTN soft caps | 120 requests per UTC day (search stops at 100 so open rooms can still settle); 950 per calendar month |
 | Cache lifetimes | Countries and services 7 days · title search and film records 30 days · candidate pages 24 h |
 
@@ -263,7 +263,9 @@ Failures: a Catalog call fails → if at least 10 films have already survived th
 
 ## 9. AI contract
 
-One `chat.completions.create` call through the `openai` SDK (`baseURL = AI_BASE_URL`, `model = AI_MODEL`), temperature 0.4, `maxRetries: 0`, no streaming, no tools. If `AI_API_KEY` is not set the step is skipped (kill switch).
+One `POST {AI_BASE_URL}/chat/completions` with `fetch` (no SDK; `model = AI_MODEL`), temperature 0.4, `max_completion_tokens: 2000`, `reasoning_effort: "low"`, `include_reasoning: false`, no streaming, no tools. If `AI_API_KEY` is not set the step is skipped (kill switch). It is also skipped when the shortlist has fewer than 3 films. A non-2xx answer (429 included), a timeout or a network error goes straight to the fallback; only a validation failure is retried.
+
+**Result.** The model's three films lead the ranking with its reasons; the other shortlist films follow in score order with template reasons, so a veto past the third film needs no second call.
 
 **Deadline.** One 12 s budget covers the first attempt and its one retry. The first attempt may use up to 8 s. A retry happens only after a validation failure and only if at least 3 s remain; it gets the time that is left. When the budget is spent, the fallback is used.
 
