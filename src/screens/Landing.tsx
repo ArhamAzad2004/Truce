@@ -1,6 +1,6 @@
 import { type FormEvent, useState } from "react";
 import { CODE_RE } from "../../shared/limits";
-import { Attribution } from "../components/Attribution";
+import { SiteFooter } from "../components/Attribution";
 import "./Landing.css";
 
 // Accepts a typed code (spaces and dashes ignored) or a pasted invite link.
@@ -70,9 +70,7 @@ export function Landing({ go }: { go: (to: string) => void }) {
         )}
       </div>
 
-      <footer className="landing-footer">
-        <Attribution />
-      </footer>
+      <SiteFooter />
     </main>
   );
 }

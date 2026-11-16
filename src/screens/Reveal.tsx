@@ -1,9 +1,18 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { PublicState, You } from "../../shared/protocol";
-import { Attribution } from "../components/Attribution";
+import { SiteFooter } from "../components/Attribution";
 import "./Reveal.css";
 
+/** Dims the house light (the spill at the top of the page) while this screen is up. */
+function useLightsDown() {
+  useEffect(() => {
+    document.documentElement.classList.add("lights-down");
+    return () => document.documentElement.classList.remove("lights-down");
+  }, []);
+}
+
 export function Settling() {
+  useLightsDown();
   return (
     <main className="screen settling">
       <header className="screen-head"><span className="wordmark" aria-label="Truce">TRUCE</span></header>
@@ -33,6 +42,17 @@ type Props = { state: PublicState; memberId: string | null; you: You; onVeto: ()
 export function Reveal({ state, memberId, you, onVeto, onReopen }: Props) {
   const pick = state.pick;
   const isHost = memberId !== null && memberId === state.hostId;
+  useLightsDown();
+  // After a veto the lights come up for a beat before the runner-up prints.
+  const movieId = pick?.movieId;
+  const afterVeto = Boolean(state.vetoedBy);
+  useEffect(() => {
+    if (!afterVeto) return;
+    const root = document.documentElement;
+    root.classList.add("lights-beat");
+    const timer = setTimeout(() => root.classList.remove("lights-beat"), 900);
+    return () => { clearTimeout(timer); root.classList.remove("lights-beat"); };
+  }, [movieId, afterVeto]);
   const tearer = state.members.find((m) => m.id === state.vetoedBy)?.nickname;
 
   // Every streamable film has been vetoed: the way out is the host's lobby.
@@ -64,8 +84,10 @@ export function Reveal({ state, memberId, you, onVeto, onReopen }: Props) {
 
       <p className="note" role="status">{tearer && `${tearer} tore it up. Here's the runner-up.`}</p>
 
-      {/* Keyed by film, so a runner-up arrives as a new ticket. */}
-      <article key={pick.movieId} className="ticket reveal" aria-labelledby="pick-title">
+      <div className="slot-bar" aria-hidden="true" />
+      {/* Keyed by film, so a runner-up prints as a new ticket. */}
+      <div key={pick.movieId} className={afterVeto ? "feed feed-again" : "feed"}>
+      <article className="ticket reveal" aria-labelledby="pick-title">
         <div className="ticket-section pick">
           <Poster src={pick.poster} title={pick.title} />
           <div className="pick-text">
@@ -113,12 +135,13 @@ export function Reveal({ state, memberId, you, onVeto, onReopen }: Props) {
           </div>
         </div>
       </article>
+      </div>
 
       {isHost
         ? <button className="btn-text" type="button" onClick={onReopen}>Back to the lobby</button>
         : <p className="note">The host can reopen the lobby to pick again.</p>}
 
-      <footer className="landing-footer"><Attribution /></footer>
+      <SiteFooter />
     </main>
   );
 }

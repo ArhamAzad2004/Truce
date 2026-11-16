@@ -143,3 +143,24 @@ button { font: inherit; color: inherit; }
   padding: var(--s2) var(--s3); border: 1px solid var(--line); border-radius: 6px;
   color: var(--text); font-size: 14px; line-height: 20px; text-align: center;
 }
+
+.site-footer {
+  display: grid; gap: var(--s2); justify-items: center;
+  margin-top: auto; color: var(--muted); font-size: 14px; line-height: 20px; text-align: center;
+}
+.btn-inline { min-height: 0; padding: 0; font-size: inherit; color: inherit; }
+
+/* About sheet: a native dialog on ticket stock. */
+.sheet {
+  width: min(100% - 32px, 420px); max-height: min(100dvh - 32px, 720px); padding: var(--s5) var(--s4);
+  border: 0; border-radius: 14px; background: var(--stock); color: var(--ink); box-shadow: var(--shadow);
+  text-align: left; font-size: 16px; line-height: 24px;
+}
+.sheet::backdrop { background: rgb(15 13 11 / .8); }
+.sheet h3 { margin: var(--s4) 0 var(--s1); font-size: 16px; font-weight: 600; }
+.sheet p + p { margin-top: var(--s2); }
+.sheet .hint { margin: var(--s4) 0; }
+.sheet :focus-visible { outline-color: var(--ink); }
+
+/* Screen changes move focus to the heading so screen readers announce the new screen. */
+h1:focus { outline: none; }

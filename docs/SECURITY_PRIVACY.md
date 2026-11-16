@@ -169,7 +169,7 @@ Tick in Phase 9, each with evidence (test name, command output or screenshot). U
 - [ ] Logs for a full session contain no nickname, token, room code, IP or search text (manual read)
 
 **Privacy and attribution**
-- [ ] About sheet shows the privacy notice below and the MOTN attribution sentence with its link
+- [x] About sheet shows the privacy notice below and the MOTN attribution sentence with its link — `SiteFooter` in `src/components/Attribution.tsx`, on Landing and Reveal
 - [x] Attribution line visible on every reveal and on the landing footer — Landing footer and Reveal footer render `Attribution`
 - [x] No service logos anywhere; services are text — services render as text labels and tags only
 - [ ] No third-party requests other than `cdn.movieofthenight.com` (network tab); fonts load from the app's own origin

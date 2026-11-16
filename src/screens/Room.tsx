@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRoom } from "../useRoom";
 import { Favourites } from "./Favourites";
 import { Lobby } from "./Lobby";
@@ -29,6 +29,15 @@ export function Room({ code, go }: { code: string; go: (to: string) => void }) {
   const room = useRoom(code);
   const [view, setView] = useState<"lobby" | "taps" | "films">("lobby");
   const open = () => go("/new");
+
+  // A new screen replaces the old one without a page load, so move focus to its heading for screen readers.
+  // Skipped when the screen has put focus in a field of its own (the nickname).
+  const screen = `${room.status}:${room.state?.phase}:${view}:${room.state?.pick?.movieId}`;
+  useEffect(() => {
+    if (document.activeElement instanceof HTMLInputElement) return;
+    const heading = document.querySelector("h1");
+    if (heading) { heading.tabIndex = -1; heading.focus({ preventScroll: true }); }
+  }, [screen]);
 
   switch (room.status) {
     case "joined":

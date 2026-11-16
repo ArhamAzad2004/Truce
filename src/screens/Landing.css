@@ -28,11 +28,3 @@
 .code-form { display: grid; gap: var(--s2); width: 100%; }
 .code-form .field-row { display: flex; gap: var(--s2); }
 .code-form .btn { width: auto; padding: 0 var(--s5); }
-
-.landing-footer {
-  margin-top: auto;
-  color: var(--muted);
-  font-size: 14px;
-  line-height: 20px;
-  text-align: center;
-}

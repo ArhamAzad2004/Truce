@@ -97,8 +97,8 @@ Full reasoning goes in `DECISIONS.md` (Phase 2).
 - **Done when:** every `SECURITY_PRIVACY.md` checklist row is ticked with evidence.
 
 ### Phase 10 — Deploy and portfolio polish · Opus 5.5
-- [ ] Production secrets; optional custom domain; motion polish; Lighthouse and accessibility pass; timed 3-phone run (under 60 s).
-- [ ] README with GIF and architecture diagram, in-app about/privacy sheet, final doc sync, tag `v1.0`.
+- [ ] Production secrets (done); motion polish (done: lights dim, ticket prints in steps, reasons stagger, lights-up beat after a veto; the stub tear-off itself is not animated); focus moves to each new screen's heading (done). Still open: Lighthouse run, a screen-reader pass, and the timed 3-phone run (under 60 s), which need a real device.
+- [ ] README with architecture diagram (done), in-app about/privacy sheet (done), final doc sync (done). Still open: a GIF or screenshots for the README, and the `v1.0` tag after the phone run.
 - **Done when:** works on iOS Safari and Android Chrome, README portfolio-ready, Cloudflare, Groq and MOTN dashboards show $0. Timed runs reuse the same favourites so they hit the cache.
 
 ## Room state and protocol

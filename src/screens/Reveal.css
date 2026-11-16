@@ -14,12 +14,37 @@
 .reasons { display: grid; gap: var(--s3); margin: 0; padding: 0; list-style: none; }
 .reasons strong { font-weight: 600; }
 
-/* shortcut: a plain fade; the printing choreography (DESIGN_BRIEF §06) comes with the veto tear-off in Phase 10. */
+/* The ticket feeds down out of the printer slot. The clip hides it above the slot; the padding leaves room for its shadow. */
+.feed { overflow: hidden; margin-top: calc(-1 * var(--s5)); padding-bottom: 28px; margin-bottom: -28px; }
+
+/*
+ * Motion (DESIGN_BRIEF §06): lights dim, the ticket prints in steps, reasons arrive one by one.
+ * Only opacity and transform are animated. With reduced motion, the dimmed room and the finished ticket show at once.
+ * shortcut: after a veto the old ticket is replaced and the runner-up prints; the old stub is not shown tearing off.
+ */
+html.lights-down body::before { opacity: .4; }
 @media (prefers-reduced-motion: no-preference) {
-  .reveal { animation: reveal-in 600ms ease-out both; }
-  @keyframes reveal-in { from { opacity: 0; transform: translateY(-8px); } }
+  body::before { transition: opacity 1200ms ease-out; }
+  html.lights-beat body::before { opacity: 1; transition-duration: 300ms; }
+
   .settling .slot-bar { animation: slot-wait 1200ms ease-in-out infinite alternate; }
   @keyframes slot-wait { from { opacity: .45; } }
+
+  .feed .reveal { animation: print 900ms steps(16, end) 900ms both; }
+  .feed-again .reveal { animation-delay: 600ms; }
+  @keyframes print { from { transform: translateY(-100%); } }
+
+  .feed .reasons li { animation: reason-in 200ms ease-out both; }
+  @keyframes reason-in { from { opacity: 0; } }
+  .feed .reasons li:nth-child(1) { animation-delay: 1900ms; }
+  .feed .reasons li:nth-child(2) { animation-delay: 2020ms; }
+  .feed .reasons li:nth-child(3) { animation-delay: 2140ms; }
+  .feed .reasons li:nth-child(4) { animation-delay: 2260ms; }
+  .feed .reasons li:nth-child(5) { animation-delay: 2380ms; }
+  .feed .reasons li:nth-child(6) { animation-delay: 2500ms; }
+  .feed .reasons li:nth-child(7) { animation-delay: 2620ms; }
+  .feed .reasons li:nth-child(8) { animation-delay: 2740ms; }
+  .feed.feed-again .reasons li:nth-child(n) { animation-delay: 1500ms; }
 }
 
 /* The veto stub: the only place oxblood appears (DESIGN_BRIEF §03). */
