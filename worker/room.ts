@@ -1,8 +1,19 @@
 import { DurableObject } from "cloudflare:workers";
 import { LIMITS } from "../shared/limits";
-import { ClientMessage, type ErrorCode, type Phase, type PublicState, type ServerMessage } from "../shared/protocol";
+import {
+  type Answers, ClientMessage, type ErrorCode, type Favourite, type Phase, type PublicState, type ServerMessage, type You,
+} from "../shared/protocol";
+import type { Fail } from "./catalog";
+import type { Countries } from "./motn";
 
-type Member = { nickname: string; token: string; favourites: []; ready: boolean; vetoUsed: boolean };
+type Member = {
+  nickname: string;
+  token: string;
+  answers?: Answers;
+  favourites: Favourite[];
+  ready: boolean;
+  vetoUsed: boolean;
+};
 
 type RoomState = {
   code: string;
@@ -17,6 +28,7 @@ type RoomState = {
 };
 
 type Attachment = { memberId: string } | null;
+type Seat = Extract<ClientMessage, { type: "join" | "resume" }>;
 
 const EXPIRED_CLOSE = 4000;
 const POLICY_CLOSE = 1008;
@@ -33,9 +45,19 @@ const sameSecret = (a: string, b: string) =>
 
 const nameKey = (nickname: string) => nickname.toLowerCase();
 
+const you = (m: Member): You => ({
+  answers: m.answers,
+  favourites: m.favourites.map(({ id, title, year, poster }) => ({ id, title, year, poster })),
+});
+
+// A Catalog failure as a socket error. "PICK_FAILED" = the film listings did not answer.
+const catalogError = (fail: Fail): ServerMessage =>
+  fail.error === "QUOTA_REACHED" ? { type: "error", code: "QUOTA_REACHED", scope: fail.scope } : { type: "error", code: "PICK_FAILED" };
+
 export class Room extends DurableObject<Env> {
   // Flood counters live in memory: they reset when the object sleeps, which only happens when sockets are idle.
   private recent = new WeakMap<WebSocket, number[]>();
+  private queue: Promise<void> = Promise.resolve();
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
@@ -45,6 +67,7 @@ export class Room extends DurableObject<Env> {
 
   private load = () => this.ctx.storage.kv.get<RoomState>("room");
   private save = (room: RoomState) => this.ctx.storage.kv.put("room", room);
+  private catalog = () => this.env.CATALOG.getByName("catalog");
 
   /** Called once by POST /api/rooms. Returns false if the code is already in use. */
   async create(code: string, region: string, hostToken: string): Promise<boolean> {
@@ -79,9 +102,15 @@ export class Room extends DurableObject<Env> {
   }
 
   async webSocketMessage(ws: WebSocket, raw: string | ArrayBuffer) {
+    // One message at a time for the whole room, so a handler waiting on the Catalog can't be overtaken
+    // (for example setReady arriving while setFavourites is still looking films up).
+    this.queue = this.queue.then(() => this.handle(ws, raw)).catch(() => console.error("room message failed"));
+    await this.queue;
+  }
+
+  private async handle(ws: WebSocket, raw: string | ArrayBuffer) {
     const att = ws.deserializeAttachment() as Attachment;
-    const room = this.load();
-    if (!room) return ws.close(EXPIRED_CLOSE, "EXPIRED");
+    if (!this.load()) return ws.close(EXPIRED_CLOSE, "EXPIRED");
 
     const now = Date.now();
     const times = (this.recent.get(ws) ?? []).filter((t) => now - t < LIMITS.floodWindowMs);
@@ -90,12 +119,75 @@ export class Room extends DurableObject<Env> {
     if (times.length > LIMITS.floodCount) return this.reject(ws, "RATE_LIMITED");
 
     const msg = this.parse(raw);
-    if (!msg) return att ? this.send(ws, { type: "error", code: "BAD_MESSAGE" }) : this.reject(ws, "BAD_MESSAGE");
+    const bad = () => (att ? this.send(ws, { type: "error", code: "BAD_MESSAGE" }) : this.reject(ws, "BAD_MESSAGE"));
+    if (!msg) return bad();
+    if (msg.type === "join" || msg.type === "resume") return att ? bad() : this.seat(ws, msg);
+    // The first frame must be join or resume.
+    if (!att) return bad();
+    if (msg.type === "ping") return this.send(ws, { type: "pong" });
 
-    if (msg.type === "ping") return att ? this.send(ws, { type: "pong" }) : this.reject(ws, "BAD_MESSAGE");
-    // join and resume are only valid as the first frame; the first frame must be one of them.
-    if (att) return this.send(ws, { type: "error", code: "BAD_MESSAGE" });
+    // Catalog lookups come first: nothing may await between loading the room and saving it.
+    let countries: Countries | undefined;
+    let films: Favourite[] | undefined;
+    if (msg.type === "setAnswers" || msg.type === "setRegion") {
+      const result = await this.catalog().countries();
+      if (!result.ok) return this.send(ws, catalogError(result));
+      countries = result.data;
+    } else if (msg.type === "setFavourites") {
+      const found = await this.catalog().films(msg.ids);
+      // Only films this server has shown in a search are accepted, so this never costs an upstream request.
+      if (found.some((f) => !f)) return bad();
+      films = found as Favourite[];
+    }
 
+    const room = this.load();
+    const me = room?.members[att.memberId];
+    if (!room || !me) return ws.close(EXPIRED_CLOSE, "EXPIRED");
+    const refuse = (code: ErrorCode) => this.send(ws, { type: "error", code });
+    if (room.phase !== "lobby") return refuse("WRONG_PHASE");
+
+    let everyone = false; // whose private data changed
+    switch (msg.type) {
+      case "setAnswers": {
+        const offered = new Set(countries![room.region]?.services.map((s) => s.id));
+        if (!msg.serviceIds.every((id) => offered.has(id))) return bad();
+        const { mood, energy, maxMinutes, serviceIds } = msg;
+        me.answers = { mood, energy, maxMinutes, serviceIds };
+        me.ready = false;
+        break;
+      }
+      case "setFavourites":
+        me.favourites = films!;
+        me.ready = false;
+        break;
+      case "setReady":
+        if (msg.ready && !(me.answers?.serviceIds.length && me.favourites.length)) return refuse("WRONG_PHASE");
+        me.ready = msg.ready;
+        break;
+      case "setRegion":
+        if (att.memberId !== room.hostId) return refuse("NOT_HOST");
+        if (!countries![msg.region]) return bad();
+        if (msg.region === room.region) return;
+        room.region = msg.region;
+        for (const m of Object.values(room.members)) {
+          if (m.answers) m.answers.serviceIds = []; // services differ per country
+          m.ready = false;
+        }
+        everyone = true;
+        break;
+    }
+
+    this.save(room);
+    for (const sock of this.ctx.getWebSockets()) {
+      const other = sock.deserializeAttachment() as Attachment;
+      if (other && (everyone || other.memberId === att.memberId)) this.send(sock, { type: "you", you: you(room.members[other.memberId]) });
+    }
+    this.broadcast(room);
+  }
+
+  /** join or resume: attach this socket to a member. Synchronous, so it can't interleave. */
+  private seat(ws: WebSocket, msg: Seat) {
+    const room = this.load()!;
     let memberId: string | undefined;
     if (msg.type === "resume") {
       memberId = Object.keys(room.members).find((id) => sameSecret(room.members[id].token, msg.token));
@@ -124,8 +216,8 @@ export class Room extends DurableObject<Env> {
     }
 
     ws.serializeAttachment({ memberId } satisfies Attachment);
-    const state = this.publicState(room);
-    this.send(ws, { type: "welcome", memberId, token: room.members[memberId].token, state, you: { favourites: [] } });
+    const member = room.members[memberId];
+    this.send(ws, { type: "welcome", memberId, token: member.token, state: this.publicState(room), you: you(member) });
     this.broadcast(room, ws);
   }
 
@@ -182,8 +274,7 @@ export class Room extends DurableObject<Env> {
   private broadcast(room: RoomState, skip?: WebSocket, gone?: WebSocket) {
     const frame = JSON.stringify({ type: "state", state: this.publicState(room, gone) } satisfies ServerMessage);
     for (const ws of this.ctx.getWebSockets()) {
-      if (ws === gone || !ws.deserializeAttachment()) continue;
-      if (ws === skip) continue;
+      if (ws === gone || ws === skip || !ws.deserializeAttachment()) continue;
       try { ws.send(frame); } catch { /* socket is closing */ }
     }
   }

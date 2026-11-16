@@ -17,7 +17,7 @@ A group can't agree on a movie. Each person joins a room from a link or QR code 
 - `npm i`, then `npm run dev` (Vite + Worker + Durable Object together via `@cloudflare/vite-plugin`), `npm test` (Vitest + workers pool), `npx wrangler deploy`.
 - Setup for a fresh machine, keys and global vs project Claude config: `docs/SETUP.md`.
 
-## Code map (rooms built; `catalog`, `motn`, `pick/` and later screens are planned)
+## Code map (rooms and inputs built; `pick/` and the reveal are planned)
 - `shared/` — zod schemas for WS messages, API bodies and enums (`protocol.ts`), limits (`limits.ts`). Single source of truth for `docs/BACKEND_SCHEMA.md`.
-- `worker/index.ts` — routing, rate limits, Origin check. `worker/room.ts` — Room Durable Object (state machine, hibernation, alarm expiry). `worker/motn.ts` — Streaming Availability API client, called only from the `Catalog` Durable Object (single caller: cache + daily/monthly quota counters). Local dev uses `MOTN_MODE=fixtures` so typing doesn't spend quota. `worker/pick/` — candidates → score → AI → validate → fallback.
-- `src/` — React client: `useRoom.ts` (WS + reducer), `screens/` (Landing, Lobby, QuickTaps, Favourites, Settling, Reveal), `styles/tokens.css` from `docs/DESIGN_BRIEF.md`.
+- `worker/index.ts` — routing, rate limits, Origin check. `worker/room.ts` — Room Durable Object (state machine, hibernation, alarm expiry). `worker/motn.ts` — Streaming Availability API client, called only from the `Catalog` Durable Object (single caller: cache + daily/monthly quota counters). With no `MOTN_API_KEY` set it answers from `worker/fixtures.ts` (sample data), so dev, tests and CI spend no quota. `worker/pick/` — candidates → score → AI → validate → fallback.
+- `src/` — React client: `useRoom.ts` (WS + reconnect), `screens/` (Landing, Nickname, Lobby, QuickTaps, Favourites; Settling and Reveal planned), `styles/tokens.css` from `docs/DESIGN_BRIEF.md`.

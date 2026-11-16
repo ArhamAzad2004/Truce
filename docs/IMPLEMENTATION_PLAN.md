@@ -68,10 +68,10 @@ Full reasoning goes in `DECISIONS.md` (Phase 2).
 - **Done when:** two phones see each other join/leave live, refresh resumes the same member, room is gone after its TTL.
 
 ### Phase 5 — Slice 3: inputs · Opus 5.5
-- [ ] Quick taps: mood, energy, time, services.
-- [ ] `Catalog` DO: MOTN client (`GET /countries`, `GET /shows/search/title`), trimmed cache, daily and monthly counters, `QUOTA_REACHED`. `GET /api/regions`, `GET /api/services?region=`, `GET /api/search?q=` served from it. Fixture mode for local dev.
+- [x] Quick taps: mood, energy, time, services.
+- [x] `Catalog` DO: MOTN client (`GET /countries`, `GET /shows/search/title`), trimmed cache, daily and monthly counters, `QUOTA_REACHED`. `GET /api/regions`, `GET /api/services?region=`, `GET /api/search?q=` served from it. Sample data when no key is set.
 - [ ] With the real key, check the MOTN **[verify]** list in `TRD.md` §10 (quota status code, billing cycle, poster key names, UAE services from a live `/countries` call).
-- [ ] Favourites picker (3-character minimum, 500 ms debounce, 3 films); ready states (edits clear ready; region change clears services); host's "Settle it" enabled at ≥ 2 ready.
+- [x] Favourites picker (3-character minimum, 500 ms debounce, 3 films); ready states (edits clear ready; region change clears services); host's "Settle it" shown, opening at ≥ 2 ready (it starts the pick in Phase 6).
 - **Done when:** a member finishes inputs in under 25 s on a phone; lobby shows who's ready without revealing answers; a room of 3 uses about 15 MOTN requests for search, measured.
 
 ### Phase 6 — Slice 4: deterministic pick (no AI) · Fable 5.2

@@ -14,3 +14,14 @@
 .seat-status { flex: none; margin-left: auto; color: var(--ink-muted); font-size: 14px; }
 .seat-row.away .seat { opacity: .5; }
 .seat-row.away .seat-name { color: var(--ink-muted); font-weight: 400; }
+
+.seat-ready { border-style: solid; background: var(--ink); color: var(--stock); }
+.stamp {
+  flex: none; margin-left: auto; padding: 2px 6px; transform: rotate(-4deg);
+  border: 1.5px solid var(--bronze); border-radius: 3px; color: var(--bronze);
+}
+
+.region { display: grid; gap: var(--s2); }
+.region-pick { display: grid; gap: var(--s2); color: var(--muted); font-size: 14px; }
+.region-pick select { color-scheme: dark; }
+.btn-inline { min-height: 0; padding: 0; font-size: inherit; color: inherit; }

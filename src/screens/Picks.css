@@ -1,0 +1,33 @@
+/* Quick taps and Favourites. Controls on stock: 44px, ink border (DESIGN_BRIEF §05). */
+.muted { color: var(--muted); }
+
+.group { min-width: 0; margin: 0; border: 0; }
+.group legend { width: 100%; padding: 0; }
+.group-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: var(--s3); font-weight: 600; }
+.group-head small { color: var(--ink-muted); font-size: 14px; font-weight: 400; }
+
+.chips { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.chip {
+  position: relative; display: inline-flex; align-items: center; gap: 6px;
+  min-height: 44px; padding: 0 14px;
+  border: 1.5px solid var(--ink); border-radius: 6px; cursor: pointer;
+}
+.chip input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+.chip:has(input:checked) { background: var(--ink); color: var(--stock); font-weight: 600; }
+.chip:has(input:checked)::before { content: "✓"; color: var(--amber); }
+.chip:has(input:focus-visible) { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+.slots, .results { display: grid; gap: var(--s3); margin: 0; padding-left: 0; list-style: none; }
+.slots { padding-bottom: var(--s5); }
+.slot, .result { display: flex; align-items: center; gap: var(--s3); min-height: 60px; }
+.slot-empty .poster { border: 1.5px dashed var(--perf); background: none; }
+.result { width: 100%; padding: 0; border: 0; background: none; text-align: left; cursor: pointer; }
+.poster { flex: none; width: 40px; height: 60px; border-radius: 4px; background: var(--stock-dim); object-fit: cover; }
+.film-text { display: grid; min-width: 0; overflow-wrap: anywhere; }
+.film-text strong { font-weight: 600; }
+.btn-link {
+  flex: none; margin-left: auto; min-height: 44px; padding: 0 var(--s1); border: 0; background: none;
+  color: var(--ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
+  display: inline-flex; align-items: center;
+}
+.input:disabled { opacity: .6; }

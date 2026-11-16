@@ -88,7 +88,7 @@ All under the app's own origin. JSON in and out. Errors are `{ "error": "<CODE>"
 | `GET /api/regions` | none | `[{ "code": "AE", "name": "…" }]` (the countries MOTN supports) | 429, 502, 503 as above | 30 (shared with search) |
 | `GET /api/services?region=` | `region`: two letters | `[{ "id": "netflix", "name": "Netflix" }]` (up to 12, in MOTN's popularity order; services that offer subscription or free viewing). `[]` for a country MOTN does not cover | 400, 429, 502, 503 as above | 30 (shared with search) |
 
-- `POST /api/rooms` generates the code and host token with `crypto.getRandomValues`, sets `region` from `request.cf.country` (falls back to `US` when the country is missing or not supported by MOTN), initialises the room and sets the expiry alarm. It answers 503 `QUOTA_REACHED` while the data quota is used up, so nobody opens a room that cannot finish.
+- `POST /api/rooms` generates the code and host token with `crypto.getRandomValues`, sets `region` from `request.cf.country` (falls back to `US` when the country is missing, not supported by MOTN, or the country list could not be loaded), initialises the room and sets the expiry alarm. It answers 503 `QUOTA_REACHED` while the data quota is used up, so nobody opens a room that cannot finish.
 - A browser cannot read the status of a failed WebSocket handshake. When a socket never opens, the client sends a plain `GET` to the same path: 404 means "no such room", 426 means the room exists and the failure was the network.
 - The Origin check compares the `Origin` header with the origin of the request URL, so there is no allow-list to configure. It applies to upgrades only.
 - Search, regions and services are trimmed views served by the Catalog object (section 7). No MOTN key and no raw MOTN response reaches the client.
@@ -97,7 +97,7 @@ All under the app's own origin. JSON in and out. Errors are `{ "error": "<CODE>"
 
 ## 4. WebSocket protocol
 
-Text frames, JSON, one object per frame, discriminated on `type`. Inbound frames over 2 KB or failing validation get `error BAD_MESSAGE`. The first frame must be `join` or `resume`; anything else closes the socket. `join` and `resume` are refused with `BAD_MESSAGE` on a socket that already has a member.
+Text frames, JSON, one object per frame, discriminated on `type`. A room handles one message at a time, in arrival order, so `setFavourites` followed at once by `setReady` is safe. Inbound frames over 2 KB or failing validation get `error BAD_MESSAGE`. The first frame must be `join` or `resume`; anything else closes the socket. `join` and `resume` are refused with `BAD_MESSAGE` on a socket that already has a member.
 
 ### Client → server
 
@@ -133,6 +133,7 @@ Text frames, JSON, one object per frame, discriminated on `type`. Inbound frames
 |---|---|---|
 | `welcome` | `memberId: string` · `token: string` · `state: PublicState` · `you: { answers?, favourites }` (private to this member; favourites as `{id, title, year, poster}`) | Reply to `join` or `resume`, to that socket only |
 | `state` | `state: PublicState` | To every joined socket after each change (full snapshot, no diffs) |
+| `you` | `you: { answers?, favourites }` | To a member's own sockets whenever their private data changes: after their `setAnswers` or `setFavourites`, and to every member after `setRegion` (their `serviceIds` were cleared) |
 | `error` | `code: ErrorCode` · `scope?: "day" \| "month"` (only with `QUOTA_REACHED`) | To the sending socket only |
 | `pong` | none | Auto-response to `ping` |
 
@@ -165,8 +166,8 @@ Text frames, JSON, one object per frame, discriminated on `type`. Inbound frames
 | `EXPIRED` | Room reached its TTL | Closed (4000) |
 | `VETO_USED` | Member already used their veto | Open |
 | `NO_CANDIDATES` | Nothing streamable survived the relaxation ladder; room returns to `lobby` | Open |
-| `PICK_FAILED` | The data source did not answer during settle; room returns to `lobby` | Open |
-| `QUOTA_REACHED` | The data quota (daily soft cap or monthly limit) is used up; room returns to `lobby` | Open |
+| `PICK_FAILED` | The data source did not answer: during settle (room returns to `lobby`), or while checking `setAnswers` or `setRegion` (nothing is changed) | Open |
+| `QUOTA_REACHED` | The data quota (daily soft cap or monthly limit) is used up; a settle returns the room to `lobby`, other messages change nothing | Open |
 
 A failed settle sends the `error` to the host's socket and also sets `notice` in the public state, so guests see the same message.
 
@@ -235,6 +236,8 @@ Confirmed in the MOTN docs (2026-11-16): the four endpoints above, `GET /shows/{
 **Genres.** MOTN genre ids (confirmed): `action`, `adventure`, `animation`, `comedy`, `crime`, `documentary`, `drama`, `family`, `fantasy`, `history`, `horror`, `music`, `mystery`, `news`, `reality`, `romance`, `scifi`, `talk`, `thriller`, `war`, `western`.
 
 **Mood → genres** (starting values, tuned in Phase 6): cosy → `family`, `romance`, `animation` · funny → `comedy` · tense → `thriller`, `crime`, `horror` · moving → `drama`, `romance` · mind_bending → `scifi`, `mystery` · feel_good → `comedy`, `family`, `music`. Energy nudges the score only: `half_asleep` favours shorter films and `comedy`, `family`, `animation`; `wired` favours `action`, `thriller`, `adventure`.
+
+**Sample data.** With no `MOTN_API_KEY` the Catalog reads `worker/fixtures.ts` instead of calling MOTN (local dev, tests, CI). Requests are counted the same way, so the guard behaves identically.
 
 **Quota guard.** Before each MOTN request the Catalog checks `day:<YYYY-MM-DD>` and `month:<YYYY-MM>` (UTC). Over a cap → `QUOTA_REACHED` with the scope, and no request is sent. A 429 from MOTN is treated the same way as the monthly cap **[verify the exact status and body MOTN returns at quota]**: the Catalog stops calling for 6 hours, then lets one request through to test. MOTN's billing cycle may not match the calendar month **[verify in the dashboard]**; the counters are a guard, MOTN's own answer is the authority. Per-second rate limits on the free plan are not documented **[verify]**; settle calls run one after another.
 

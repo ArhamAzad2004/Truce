@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ErrorCode, PublicState, ServerMessage } from "../shared/protocol";
+import type { ClientMessage, ErrorCode, PublicState, QuotaScope, ServerMessage, You } from "../shared/protocol";
+
+/** The last thing the room refused, for a line of copy in the lobby. */
+export type RoomError = { code: ErrorCode; scope?: QuotaScope };
 
 export type RoomStatus =
   | "connecting" | "needName" | "joined"
@@ -25,7 +28,9 @@ export function useRoom(code: string) {
   const [status, setStatus] = useState<RoomStatus>("connecting");
   const [state, setState] = useState<PublicState | null>(null);
   const [memberId, setMemberId] = useState<string | null>(null);
+  const [you, setYou] = useState<You>({ favourites: [] });
   const [joinError, setJoinError] = useState<ErrorCode | null>(null);
+  const [error, setError] = useState<RoomError | null>(null);
   const [reconnecting, setReconnecting] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const socket = useRef<WebSocket | null>(null);
@@ -63,11 +68,14 @@ export function useRoom(code: string) {
           saveSeat(code, { token: msg.token });
           setMemberId(msg.memberId);
           setState(msg.state);
+          setYou(msg.you);
           setJoinError(null);
           setReconnecting(false);
           setStatus("joined");
         } else if (msg.type === "state") {
           setState(msg.state);
+        } else if (msg.type === "you") {
+          setYou(msg.you);
         } else if (msg.type === "error") {
           if (msg.code === "ROOM_FULL") stop("full");
           else if (msg.code === "EXPIRED") stop("expired");
@@ -75,6 +83,7 @@ export function useRoom(code: string) {
           else if (msg.code === "NAME_TAKEN") setJoinError(msg.code);
           // A token the room no longer knows: forget it; the reconnect then asks for a name.
           else if (msg.code === "BAD_MESSAGE" && !joined) saveSeat(code, {});
+          else if (joined) setError({ code: msg.code, scope: msg.scope });
         }
       };
 
@@ -109,7 +118,12 @@ export function useRoom(code: string) {
     if (socket.current?.readyState === WebSocket.OPEN) socket.current.send(JSON.stringify({ type: "join", nickname }));
   }, []);
 
+  const send = useCallback((msg: Exclude<ClientMessage, { type: "join" | "resume" | "ping" }>) => {
+    setError(null);
+    if (socket.current?.readyState === WebSocket.OPEN) socket.current.send(JSON.stringify(msg));
+  }, []);
+
   const tryAgain = useCallback(() => setAttempt((n) => n + 1), []);
 
-  return { status, state, memberId, joinError, reconnecting, join, tryAgain };
+  return { status, state, memberId, you, joinError, error, reconnecting, join, send, tryAgain };
 }

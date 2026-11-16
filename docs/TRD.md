@@ -85,7 +85,7 @@ Free plan: **1,000 requests a month**, 1 GB of image bandwidth a month. At the l
 
 **Image bandwidth:** posters load straight from MOTN's CDN at 240 px (search rows) and 360 px (reveal). Rough estimate 2 to 3 MB per room, so the 1 GB allowance covers several hundred rooms; the request limit bites first. What MOTN does when image bandwidth runs out is **not verified**; the poster slot has a typographic placeholder for any failed image.
 
-**Development:** local runs read recorded fixtures by default (`MOTN_MODE=fixtures`), so typing in the search box during development does not spend the month's quota.
+**Development:** With no `MOTN_API_KEY` set, the Catalog answers from hand-written sample data (`worker/fixtures.ts`), so local runs, tests and CI never spend the 1,000 monthly requests. Add the key to `.dev.vars` only when you need real data.
 
 ### 3.2 Per settle (one Durable Object invocation)
 
@@ -135,7 +135,6 @@ Detail, parameters and the AI contract: [BACKEND_SCHEMA.md §7 to §10](BACKEND_
 | `AI_API_KEY` | secret | same | Groq key. **If unset, the AI step is skipped and the fallback is used** (kill switch) |
 | `AI_BASE_URL` | var | `wrangler.jsonc` | `https://api.groq.com/openai/v1` |
 | `AI_MODEL` | var | `wrangler.jsonc` | `openai/gpt-oss-20b` |
-| `MOTN_MODE` | var | `.dev.vars` only | `fixtures` (default in local dev) or `live`. Production is always live |
 | `ROOM` | DO binding | `wrangler.jsonc` | `Room` class, `new_sqlite_classes` migration |
 | `CATALOG` | DO binding | `wrangler.jsonc` | `Catalog` class, same migration list |
 | `RL_CREATE`, `RL_SEARCH`, `RL_WS` | rate-limit bindings | `wrangler.jsonc` `ratelimits` | 5, 30 and 20 per 60 s |

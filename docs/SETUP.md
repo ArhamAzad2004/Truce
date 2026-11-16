@@ -13,17 +13,16 @@ How to get Truce running on a fresh machine, and how the Claude Code setup is sp
 | `MOTN_API_KEY` | developers.movieofthenight.com → sign up → copy the key from the dashboard | Streaming Availability API by Movie of the Night. Free plan, no card: 1,000 requests and 1 GB of images a month, paused at the limit. Use one account only. Credit it in the app (see `DESIGN_BRIEF.md` 09). Get the key from this site, not from RapidAPI (different URL and header). |
 | `AI_API_KEY` | console.groq.com → API Keys | Free tier, rate-limited. Leave it empty to switch the AI step off. |
 
-Put them in `.dev.vars` in the project root (gitignored, never committed). `.dev.vars.example` lists the names once the project is scaffolded:
+Put them in `.dev.vars` in the project root (gitignored, never committed). Every line is optional:
 
 ```
 MOTN_API_KEY=
-MOTN_MODE=fixtures
 AI_API_KEY=
 AI_BASE_URL=https://api.groq.com/openai/v1
 AI_MODEL=openai/gpt-oss-20b
 ```
 
-`MOTN_MODE=fixtures` makes local runs read recorded sample data, so typing in the search box while developing does not spend the 1,000 monthly requests. Set it to `live` only when you need real data. Production is always live.
+With no `MOTN_API_KEY` set, the Catalog answers from hand-written sample data (`worker/fixtures.ts`), so local runs, tests and CI never spend the 1,000 monthly requests. Add the key to `.dev.vars` only when you need real data. Production must have the key, or the live site shows the sample films.
 
 Switching to paid OpenAI later is config-only: change `AI_BASE_URL`, `AI_MODEL` and `AI_API_KEY`.
 

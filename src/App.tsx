@@ -18,6 +18,11 @@ function NewRoom({ go }: { go: Go }) {
     setFailure(undefined);
     try {
       const res = await fetch("/api/rooms", { method: "POST" });
+      if (res.status === 503) {
+        const { scope } = (await res.json()) as { scope?: string };
+        setBusy(false);
+        return setFailure(`Truce is resting. We've used up ${scope === "day" ? "today's film lookups. Back tomorrow." : "this month's film lookups. Back next month."}`);
+      }
       if (!res.ok) throw new Error(String(res.status));
       const { code, hostToken } = (await res.json()) as CreateRoomResponse;
       saveSeat(code, { hostToken, nickname });

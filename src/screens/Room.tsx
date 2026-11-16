@@ -1,6 +1,9 @@
+import { useState } from "react";
 import { useRoom } from "../useRoom";
+import { Favourites } from "./Favourites";
 import { Lobby } from "./Lobby";
 import { Nickname } from "./Nickname";
+import { QuickTaps } from "./QuickTaps";
 
 type NoticeProps = { title: string; body: string; action: string; onAction: () => void };
 
@@ -23,11 +26,39 @@ export const NoRoom = ({ onOpen }: { onOpen: () => void }) => (
 
 export function Room({ code, go }: { code: string; go: (to: string) => void }) {
   const room = useRoom(code);
+  const [view, setView] = useState<"lobby" | "taps" | "films">("lobby");
   const open = () => go("/new");
 
   switch (room.status) {
     case "joined":
-      return room.state && <Lobby state={room.state} memberId={room.memberId} reconnecting={room.reconnecting} />;
+      if (!room.state) return null;
+      if (view === "taps") {
+        return (
+          <QuickTaps
+            you={room.you} region={room.state.region} onBack={() => setView("lobby")}
+            onDone={(answers) => { room.send({ type: "setAnswers", ...answers }); setView("films"); }}
+          />
+        );
+      }
+      if (view === "films") {
+        return (
+          <Favourites
+            you={room.you} onBack={() => setView("taps")}
+            onDone={(ids) => {
+              // The room handles messages in order, so these can go back to back.
+              room.send({ type: "setFavourites", ids });
+              room.send({ type: "setReady", ready: true });
+              setView("lobby");
+            }}
+          />
+        );
+      }
+      return (
+        <Lobby
+          state={room.state} memberId={room.memberId} you={room.you} error={room.error} reconnecting={room.reconnecting}
+          onPick={() => setView("taps")} onRegion={(region) => room.send({ type: "setRegion", region })}
+        />
+      );
     case "needName":
       return <Nickname code={code} nameTaken={room.joinError === "NAME_TAKEN"} onSubmit={room.join} />;
     case "notFound":
