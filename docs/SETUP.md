@@ -10,17 +10,20 @@ How to get Truce running on a fresh machine, and how the Claude Code setup is sp
 ## 2. API keys (both free)
 | Key | Where to get it | Notes |
 |---|---|---|
-| `TMDB_TOKEN` | themoviedb.org → Settings → API → **API Read Access Token** | Non-commercial use only. Credit TMDb and JustWatch in the app. |
-| `AI_API_KEY` | console.groq.com → API Keys | Free tier, rate-limited. |
+| `MOTN_API_KEY` | developers.movieofthenight.com → sign up → copy the key from the dashboard | Streaming Availability API by Movie of the Night. Free plan, no card: 1,000 requests and 1 GB of images a month, paused at the limit. Use one account only. Credit it in the app (see `DESIGN_BRIEF.md` 09). Get the key from this site, not from RapidAPI (different URL and header). |
+| `AI_API_KEY` | console.groq.com → API Keys | Free tier, rate-limited. Leave it empty to switch the AI step off. |
 
 Put them in `.dev.vars` in the project root (gitignored, never committed). `.dev.vars.example` lists the names once the project is scaffolded:
 
 ```
-TMDB_TOKEN=
+MOTN_API_KEY=
+MOTN_MODE=fixtures
 AI_API_KEY=
 AI_BASE_URL=https://api.groq.com/openai/v1
 AI_MODEL=openai/gpt-oss-20b
 ```
+
+`MOTN_MODE=fixtures` makes local runs read recorded sample data, so typing in the search box while developing does not spend the 1,000 monthly requests. Set it to `live` only when you need real data. Production is always live.
 
 Switching to paid OpenAI later is config-only: change `AI_BASE_URL`, `AI_MODEL` and `AI_API_KEY`.
 

@@ -4,6 +4,7 @@ This source code is published for viewing only. No permission is granted to
 copy, modify, distribute, sublicense or use it, in whole or in part, without
 prior written permission from the copyright holder.
 
-Film data and images come from TMDB and streaming availability from JustWatch.
-They are not covered by this licence and remain subject to their owners' terms.
-This product uses TMDB and the TMDB APIs but is not endorsed or certified by TMDB.
+Streaming availability metadata and images are provided by Streaming
+Availability API by Movie of the Night (https://www.movieofthenight.com/about/api).
+That data, and the posters, titles and service names it includes, are not
+covered by this licence and remain subject to their owners' terms.

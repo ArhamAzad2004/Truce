@@ -11,10 +11,10 @@
 4. Everyone has one veto that reveals the runner-up.
 
 ## Stack
-TypeScript, React + Vite, Cloudflare Workers and Durable Objects (one live room per group), TMDb for film data, and an LLM through the OpenAI SDK (Groq free tier). See [`docs/SETUP.md`](docs/SETUP.md).
+TypeScript, React + Vite, Cloudflare Workers and Durable Objects (one live room per group), the Streaming Availability API for film and streaming data, and an LLM through the OpenAI SDK (Groq free tier). See [`docs/SETUP.md`](docs/SETUP.md).
 
 ## Attribution
-This product uses TMDB and the TMDB APIs but is not endorsed or certified by TMDB. Streaming availability data by JustWatch.
+Streaming availability metadata and images are provided by [Streaming Availability API by Movie of the Night](https://www.movieofthenight.com/about/api).
 
 ## Licence
 All rights reserved. See [`LICENSE`](LICENSE).

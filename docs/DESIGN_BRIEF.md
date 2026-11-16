@@ -4,6 +4,8 @@
 
 Chosen by the owner on 2026-11-16 from six mockups. Reference build: [`design/mockups/06-night-ticket/index.html`](../design/mockups/06-night-ticket/index.html). It combines the ticket system of 01 Torn Stub with the dark room of 03 House Lights (see [`design/mockups/DIRECTIONS.md`](../design/mockups/DIRECTIONS.md)). When the app and this brief disagree, fix one of them in the same commit.
 
+The mockups were made before the data source changed. Their footer line crediting TMDB and JustWatch, and any Google Fonts link in them, are superseded by sections 04 and 09 below; the mockups stay as they are, as a record of the exploration.
+
 ## 01 Brand
 
 **Promise:** movie night, settled. One pick, everyone can stream it, and everyone knows why it fits them.
@@ -13,7 +15,7 @@ Chosen by the owner on 2026-11-16 from six mockups. Reference build: [`design/mo
 2. **The ticket is the interface.** Content lives on ticket stock: perforations separate sections, the stub holds actions. No generic cards.
 3. **Calm until the reveal.** Inputs are quiet and fast. The reveal is the one big moment and gets the motion budget.
 4. **Fair and personal.** Every person is named, every person gets a reason, every person gets one veto.
-5. **Honest.** Real films only, clear credit to TMDB and JustWatch, no fake urgency.
+5. **Honest.** Real films only, clear credit to the data source, no fake urgency.
 
 **Voice:** a friendly usher. Short, warm, a little wry. Second person. Plain verbs.
 - Do: "The lights go down when you tap." · "Tear it up and use my veto" · "Everyone gets one."
@@ -25,7 +27,7 @@ Chosen by the owner on 2026-11-16 from six mockups. Reference build: [`design/mo
 - Clear space: at least the lozenge height (30 px) on all sides.
 - Minimum size: 24 px high on screen.
 - Don't: recolour the lozenge amber or red, add a glow, stretch, rotate, or set the word without the lozenge.
-- The TMDB logo, when shown, must be smaller and less prominent than the Truce mark.
+- No third-party logo sits beside the wordmark. The data source is credited in text only (see 09), always smaller and quieter than the Truce mark.
 
 ## 03 Colour
 
@@ -59,7 +61,7 @@ Paste-ready tokens:
 - `--red` and `--bronze` only ever sit on ticket stock, never on the dark room.
 - Selection never relies on colour alone: selected = ink fill + amber tick + weight 600.
 - No glow on cards. Light is drawn as gradients on the room (a house-light spill from the top, a projector pool behind the ticket). Shadows are neutral black.
-- Posters come from TMDB in any colour; the UI stays within these tokens so posters never clash.
+- Posters arrive in any colour; the UI stays within these tokens so posters never clash.
 - Dark only for v1. A light theme is out of scope.
 
 **Contrast** (WCAG 2.x, computed for these exact pairs; all text ≥ 4.5:1)
@@ -88,7 +90,7 @@ Paste-ready tokens:
 | Label | DM Mono | 500 | 12 / 16, uppercase, tracking 0.12em |
 | Room code | DM Mono | 500 | 24 / 30 |
 
-- All from Google Fonts; load with `display=swap`.
+- All three are open-licence families (SIL Open Font License; check each licence file when downloading). **Self-host them** as WOFF2 from the app's own origin with `font-display: swap`. No Google Fonts request at runtime, so no third party sees visitors and the content security policy stays `'self'`.
 - Labels are for ticket metadata (serials, "Admit 3 · Tonight", seat numbers), never as a small tag directly above a heading.
 - Few em-dashes in copy; prefer commas, colons or full stops.
 
@@ -101,7 +103,7 @@ Paste-ready tokens:
 - **Buttons:** full-width, radius 6 px, Work Sans 600. Primary = `--amber` fill with `--ink` text, on the room.
 - **Stamp and tag:** `--bronze` text and 1.5 px border, radius 3 px. The READY stamp is rotated −4°.
 - **Seat (lobby):** 32 × 26 px, radius 9 9 3 3, seat number printed on it (`A1`…). Ready = ink fill; deciding = dashed outline.
-- **Poster:** 2:3, radius 6 px, hotlinked from `image.tmdb.org` only.
+- **Poster:** 2:3, radius 6 px, loaded from `cdn.movieofthenight.com` only (240 px wide in search rows, 360 px on the reveal). Used to identify the film, never as decoration or promotion. If an image fails, show a stock-coloured placeholder with the title in Alfa Slab One.
 - **Printer slot:** 8 px high, radius 4 px, near-black with a `#8A8172` border (5.1:1 on bg).
 
 ## 06 Motion
@@ -129,7 +131,8 @@ Paste-ready tokens:
 | Room code + QR | Code in DM Mono 24, QR on stock, "Copy invite link" button |
 | Reveal ticket | Poster, title, year · runtime, service tag, reasons (bold name lead-in), veto stub with a 3 px oxblood edge |
 | Veto tokens | Small `--stock-dim` mini-tickets, one per person |
-| Attribution line | "Film data from TMDB · Streaming data by JustWatch", Small, `--muted`, on every reveal and in the about sheet |
+| Attribution line | "Streaming data and images: Streaming Availability API by Movie of the Night", Small, `--muted`, the name a link; on the landing footer and every reveal. The full sentence (see 09) is in the about sheet |
+| Resting state | Shown when the data quota is used up: title "Truce is resting.", one line saying when it is back, no primary button. Calm, not an error: `--text` on the room, no `--danger` |
 
 ## 08 Accessibility
 
@@ -143,7 +146,9 @@ Paste-ready tokens:
 
 ## 09 Attribution and legal
 
-- Footer and about sheet: the TMDB logo (smaller than the Truce mark) and "This product uses TMDB and the TMDB APIs but is not endorsed or certified by TMDB."
-- "Streaming data by JustWatch" wherever availability is shown.
-- Streaming services appear as text labels, not their logos.
+- About sheet, in full: "Streaming availability metadata and images are provided by Streaming Availability API by Movie of the Night", with the name linked to https://www.movieofthenight.com/about/api. This sentence is required by the data source's terms.
+- Landing footer and every reveal: the short attribution line from 07, linked the same way.
+- No data-source logo and no streaming-service logos anywhere. Streaming services appear as text labels (for example "On Netflix").
+- Posters and service names belong to their owners. Posters are shown small, only to identify a film, and are removed on request.
+- No film descriptions are shown; the reasons are Truce's own lines.
 - Design is original: no copied images, layouts or marks from the references (see [`docs/design/references.md`](design/references.md)).
