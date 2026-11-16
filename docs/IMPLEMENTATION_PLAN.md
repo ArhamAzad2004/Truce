@@ -58,7 +58,7 @@ Full reasoning goes in `DECISIONS.md` (Phase 2).
 - [x] Scaffold Vite + React + TS + Cloudflare plugin; `wrangler.jsonc` with assets (`not_found_handling: "single-page-application"`, `run_worker_first: ["/api/*"]`), DO bindings (`ROOM`, `CATALOG`), `new_sqlite_classes` migration.
 - [x] `GET /api/health`, design tokens, self-hosted fonts, landing screen, attribution footer (MOTN credit with link).
 - [x] GitHub Actions CI: typegen, typecheck, test, build. Lint skipped for now: strict TypeScript covers it, add ESLint only if a need shows up.
-- [ ] Deploy to `*.workers.dev` (needs the owner's Cloudflare login).
+- [x] Deploy to `*.workers.dev`: live at https://truce.arhamazad2004.workers.dev (health 200, SPA fallback, API 404).
 - **Done when:** live URL renders the landing page and `/api/health` returns 200.
 
 ### Phase 4 — Slice 2: live room · Fable 5.2
