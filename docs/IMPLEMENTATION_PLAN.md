@@ -55,9 +55,10 @@ Full reasoning goes in `DECISIONS.md` (Phase 2).
 - **Done when:** docs agree with each other and with the protocol and pick sections below; owner has read PRD and TRD.
 
 ### Phase 3 — Slice 1: skeleton deployed · Opus 5.5
-- [ ] Scaffold Vite + React + TS + Cloudflare plugin; `wrangler.jsonc` with assets (`not_found_handling: "single-page-application"`, `run_worker_first: ["/api/*"]`), DO bindings (`ROOM`, `CATALOG`), `new_sqlite_classes` migration.
-- [ ] `GET /api/health`, design tokens, self-hosted fonts, landing screen, attribution footer (MOTN credit with link).
-- [ ] Deploy to `*.workers.dev`; GitHub Actions CI (typecheck, lint, test, build).
+- [x] Scaffold Vite + React + TS + Cloudflare plugin; `wrangler.jsonc` with assets (`not_found_handling: "single-page-application"`, `run_worker_first: ["/api/*"]`), DO bindings (`ROOM`, `CATALOG`), `new_sqlite_classes` migration.
+- [x] `GET /api/health`, design tokens, self-hosted fonts, landing screen, attribution footer (MOTN credit with link).
+- [x] GitHub Actions CI: typegen, typecheck, test, build. Lint skipped for now: strict TypeScript covers it, add ESLint only if a need shows up.
+- [ ] Deploy to `*.workers.dev` (needs the owner's Cloudflare login).
 - **Done when:** live URL renders the landing page and `/api/health` returns 200.
 
 ### Phase 4 — Slice 2: live room · Fable 5.2

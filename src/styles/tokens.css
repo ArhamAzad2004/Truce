@@ -1,0 +1,26 @@
+/* Night Ticket tokens. Source of truth: docs/DESIGN_BRIEF.md §03–§06. */
+:root {
+  /* the room */
+  --bg: #0F0D0B;
+  --text: #F2EBDD;
+  --muted: #A39B8C;
+  --amber: #F5C04A;
+  --line: #6B6357;
+  --danger: #FF7A66;
+  /* the ticket */
+  --stock: #F4ECD8;
+  --stock-lit: #FFF8E4;
+  --stock-dim: #E4D9BE;
+  --ink: #1C1611;
+  --ink-muted: #5A5046;
+  --bronze: #7A5200;
+  --red: #B3261E;
+  --perf: #A89B80;
+  --shadow: 0 18px 28px -18px rgba(0, 0, 0, .9);
+
+  --font-title: "Alfa Slab One", Georgia, serif;
+  --font-body: "Work Sans", system-ui, sans-serif;
+  --font-label: "DM Mono", ui-monospace, monospace;
+
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px;
+}

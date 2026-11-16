@@ -1,0 +1,62 @@
+.landing {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s5);
+  max-width: 420px;
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: max(var(--s5), env(safe-area-inset-top)) var(--s4) max(var(--s5), env(safe-area-inset-bottom));
+}
+
+.landing > .wordmark { margin-top: var(--s4); }
+
+.landing-ticket { width: 100%; }
+
+.ticket-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s3);
+}
+
+.ink-muted { color: var(--ink-muted); }
+
+.landing-title {
+  margin: var(--s4) 0 var(--s3);
+  font: 400 34px/38px var(--font-title);
+  letter-spacing: -.005em;
+  text-wrap: balance;
+}
+
+.steps {
+  display: grid;
+  gap: var(--s3);
+  margin: 0;
+  padding-top: var(--s3);
+  list-style: none;
+}
+.steps li { display: flex; gap: var(--s3); align-items: baseline; }
+.steps .label { color: var(--bronze); flex: none; }
+
+.landing-actions {
+  display: grid;
+  gap: var(--s3);
+  width: 100%;
+}
+
+.landing-status {
+  min-height: 20px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 20px;
+  text-align: center;
+}
+
+.landing-footer {
+  margin-top: auto;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 20px;
+  text-align: center;
+}
