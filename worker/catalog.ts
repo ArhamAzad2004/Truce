@@ -17,6 +17,16 @@ const BACKOFF = 6 * 60 * 60 * 1000; // after the API itself says the allowance i
 
 const row = ({ id, title, year, poster }: Favourite): FilmRow => ({ id, title, year, poster });
 
+/** Who a request counts against: the IPv4 address, or the IPv6 /64 a home or phone network usually holds. */
+export function clientKey(ip: string) {
+  if (!ip.includes(":")) return ip;
+  const [head, tail = ""] = ip.toLowerCase().split("::");
+  const left = head ? head.split(":") : [];
+  const right = tail ? tail.split(":") : [];
+  const groups = ip.includes("::") ? [...left, ...Array(Math.max(0, 8 - left.length - right.length)).fill("0"), ...right] : left;
+  return groups.slice(0, 4).map((g) => g.replace(/^0+(?=.)/, "")).join(":");
+}
+
 /**
  * Singleton (`getByName("catalog")`): the only code that calls the film listings.
  * Keeps trimmed responses, counts requests per UTC day and month, and stops at the soft caps.
@@ -26,20 +36,51 @@ export class Catalog extends DurableObject<Env> {
   private inflight = new Map<string, Promise<Result<FilmRow[]>>>();
   // Per-IP request counts live in memory only: never stored, never logged, gone when the object sleeps.
   private windows = new Map<string, { start: number; count: number }>();
+  private windowsSweptAt = 0;
   private countriesRetryAt = 0;
+
+  constructor(ctx: DurableObjectState, env: Env) {
+    super(ctx, env);
+    // The cache is deleted on a schedule, not just ignored when old: see alarm().
+    ctx.blockConcurrencyWhile(async () => {
+      if ((await ctx.storage.getAlarm()) === null) await ctx.storage.setAlarm(Date.now() + DAY);
+    });
+  }
+
+  /** Once a day: delete what the privacy notice says we don't keep. */
+  async alarm() {
+    const now = Date.now();
+    const drop = (prefix: string, maxAge: number) => {
+      for (const [key, value] of this.kv.list<{ at?: number }>({ prefix })) {
+        if (!value?.at || now - value.at >= maxAge) this.kv.delete(key);
+      }
+    };
+    drop("q:", SEARCH_TTL); // search text
+    drop("c:", CANDIDATES_TTL);
+    const today = new Date(now).toISOString();
+    for (const [key] of this.kv.list({ prefix: "day:" })) if (key < `day:${today.slice(0, 10)}`) this.kv.delete(key);
+    for (const [key] of this.kv.list({ prefix: "month:" })) if (key < `month:${today.slice(0, 7)}`) this.kv.delete(key);
+    this.sweepWindows(now, true);
+    await this.ctx.storage.setAlarm(now + DAY);
+  }
+
+  /** Forget rate-limit windows that have ended. Runs at most once an hour, or when memory fills. */
+  private sweepWindows(now: number, force = false) {
+    if (!force && now - this.windowsSweptAt < 3_600_000 && this.windows.size <= 5000) return;
+    this.windowsSweptAt = now;
+    for (const [key, w] of this.windows) {
+      const [, period] = LIMITS.rate[key.slice(0, key.indexOf(":")) as keyof typeof LIMITS.rate];
+      if (now - w.start >= period) this.windows.delete(key);
+    }
+    if (this.windows.size > 5000) this.windows.clear(); // still full: limits loosen briefly rather than memory growing
+  }
 
   /** Fixed window per client and bucket. This object is a singleton, so the count is exact. */
   async allow(bucket: keyof typeof LIMITS.rate, client: string): Promise<boolean> {
     const [limit, period] = LIMITS.rate[bucket];
     const now = Date.now();
-    if (this.windows.size > 5000) {
-      // Bounded memory: drop finished windows; if that isn't enough, start over (limits loosen briefly).
-      for (const [key, w] of this.windows) if (now - w.start >= 86_400_000 || (now - w.start >= 60_000 && !key.includes("Day:"))) this.windows.delete(key);
-      if (this.windows.size > 5000) this.windows.clear();
-    }
-    // One IPv6 customer usually holds a whole /64, so count the prefix, not the address.
-    const who = client.includes(":") ? client.split(":").slice(0, 4).join(":") : client;
-    const key = `${bucket}:${who}`;
+    this.sweepWindows(now);
+    const key = `${bucket}:${clientKey(client)}`;
     const window = this.windows.get(key);
     if (!window || now - window.start >= period) {
       this.windows.set(key, { start: now, count: 1 });

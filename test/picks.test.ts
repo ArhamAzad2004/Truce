@@ -1,8 +1,9 @@
-import { runInDurableObject } from "cloudflare:test";
+import { runDurableObjectAlarm, runInDurableObject } from "cloudflare:test";
 import { env, exports } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
 import type { FilmRow, Region, Service } from "../shared/protocol";
 import { parseCountries, parseShows } from "../worker/motn";
+import { clientKey } from "../worker/catalog";
 import { BASE, createRoom, join } from "./helpers";
 
 const get = (path: string) => exports.default.fetch(`${BASE}${path}`);
@@ -107,6 +108,41 @@ describe("rate limits", () => {
     expect(statuses[25]).toBe(503);
     expect((await from("2001:db8:1:2::99", "totoro")).status).toBe(200); // cached answers stay free
     expect((await from("2001:db8:9:9::1", "budget query fresh")).status).toBe(200); // another network is unaffected
+  });
+
+  it("refuses API calls made by other websites", async () => {
+    const cross = { headers: { "Sec-Fetch-Site": "cross-site" } };
+    expect((await exports.default.fetch(`${BASE}/api/search?q=totoro`, cross)).status).toBe(403);
+    expect((await exports.default.fetch(`${BASE}/api/rooms`, { method: "POST", ...cross })).status).toBe(403);
+    expect((await exports.default.fetch(`${BASE}/api/rooms`, { method: "POST", headers: { Origin: "https://evil.example" } })).status).toBe(403);
+    expect((await exports.default.fetch(`${BASE}/api/regions`, { headers: { "Sec-Fetch-Site": "same-origin", Origin: BASE } })).status).toBe(200);
+  });
+
+  it("counts IPv6 networks by their /64, however the address is written", () => {
+    expect(clientKey("2001:db8::a:b:c:d")).toBe(clientKey("2001:0db8:0000:0000:0001:0002:0003:0004"));
+    expect(clientKey("2001:db8:1:2::1")).toBe("2001:db8:1:2");
+    expect(clientKey("2001:db8:1:3::1")).not.toBe(clientKey("2001:db8:1:2::1"));
+    expect(clientKey("::1")).toBe("0:0:0:0");
+    expect(clientKey("203.0.113.7")).toBe("203.0.113.7");
+  });
+
+  it("deletes old searches and counters on its daily sweep", async () => {
+    const catalog = env.CATALOG.getByName("catalog");
+    const old = Date.now() - 31 * 24 * 60 * 60 * 1000;
+    await runInDurableObject(catalog, (_c, state) => {
+      state.storage.kv.put("q:old private words", { at: old, ids: [] });
+      state.storage.kv.put("q:recent", { at: Date.now(), ids: [] });
+      state.storage.kv.put("c:stale", { at: old, page: { films: [], nextCursor: null } });
+      state.storage.kv.put("day:2000-01-01", 5);
+      state.storage.kv.put("month:2000-01", 5);
+    });
+    expect(await runDurableObjectAlarm(catalog)).toBe(true);
+    const left = await runInDurableObject(catalog, (_c, state) => ({
+      old: state.storage.kv.get("q:old private words"), recent: state.storage.kv.get("q:recent"),
+      stale: state.storage.kv.get("c:stale"), day: state.storage.kv.get("day:2000-01-01"), month: state.storage.kv.get("month:2000-01"),
+    }));
+    expect(left).toEqual({ old: undefined, recent: expect.anything(), stale: undefined, day: undefined, month: undefined });
+    expect(await runInDurableObject(catalog, (_c, state) => state.storage.getAlarm())).not.toBeNull(); // the next sweep is booked
   });
 
   it("measures the search length after normalising", async () => {

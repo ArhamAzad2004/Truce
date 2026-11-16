@@ -39,7 +39,11 @@ type RoomState = {
   };
 };
 
-type Attachment = { memberId: string; at: number } | null; // `at` = when this socket took the seat
+// `at` = when this socket took the seat; `client` = its address, kept only for the settle budget.
+type Attachment = { memberId: string; at: number; client: string | null } | null;
+
+// Address of a socket that has connected but not yet joined. Attachments are written only on join.
+const pending = new WeakMap<WebSocket, string | null>();
 type Seat = Extract<ClientMessage, { type: "join" | "resume" }>;
 
 const EXPIRED_CLOSE = 4000;
@@ -99,11 +103,12 @@ export class Room extends DurableObject<Env> {
     if (this.load()) return false;
     const createdAt = Date.now();
     const expiresAt = createdAt + LIMITS.roomTtlMs;
+    // Alarm first: if it can't be set, nothing is stored that would outlive the room.
+    await this.ctx.storage.setAlarm(expiresAt);
     this.save({
       code, createdAt, expiresAt, region, phase: "lobby",
       hostId: null, hostToken, settleAttempts: 0, members: {},
     });
-    await this.ctx.storage.setAlarm(expiresAt);
     return true;
   }
 
@@ -122,6 +127,8 @@ export class Room extends DurableObject<Env> {
       open = open.filter((ws) => ws.deserializeAttachment());
     }
     this.ctx.acceptWebSocket(server);
+    // The client's address rides on the socket (hibernation state, never storage) so settles can be budgeted.
+    pending.set(server, request.headers.get("CF-Connecting-IP"));
     if (open.length >= LIMITS.sockets) this.reject(server, "ROOM_FULL");
     return new Response(null, { status: 101, webSocket: client });
   }
@@ -150,7 +157,7 @@ export class Room extends DurableObject<Env> {
     // The first frame must be join or resume.
     if (!att) return bad();
     if (msg.type === "ping") return this.send(ws, { type: "pong" });
-    if (msg.type === "settle") return this.settle(ws, att.memberId);
+    if (msg.type === "settle") return this.settle(ws, att.memberId, att.client);
     if (msg.type === "reopen") return this.reopen(ws, att.memberId);
     if (msg.type === "veto") return this.veto(ws, att.memberId);
 
@@ -214,7 +221,7 @@ export class Room extends DurableObject<Env> {
   }
 
   /** Host only: run the pick for the ready members. The phase is saved before the first await, so a second settle is refused. */
-  private async settle(ws: WebSocket, memberId: string) {
+  private async settle(ws: WebSocket, memberId: string, client: string | null) {
     const refuse = (code: ErrorCode) => this.send(ws, { type: "error", code });
     const room = this.load()!;
     if (memberId !== room.hostId) return refuse("NOT_HOST");
@@ -224,6 +231,11 @@ export class Room extends DurableObject<Env> {
     if (room.phase !== "lobby" || voters.length < LIMITS.minReady || room.settleAttempts >= LIMITS.settleAttempts) {
       return refuse("WRONG_PHASE");
     }
+    // Each settle can spend film lookups everyone shares, so each network gets a daily number of them.
+    if (client !== null && !(await this.catalog().allow("settlesDay", client))) {
+      return this.send(ws, { type: "error", code: "QUOTA_REACHED", scope: "day" });
+    }
+    if (this.load()?.phase !== "lobby") return refuse("WRONG_PHASE"); // something changed during the check
 
     room.phase = "settling";
     room.settleAttempts += 1;
@@ -343,7 +355,9 @@ export class Room extends DurableObject<Env> {
       .sort((a, b) => a.att!.at - b.att!.at);
     for (const { sock } of mine.slice(0, Math.max(0, mine.length - LIMITS.socketsPerMember + 1))) sock.close(REPLACED_CLOSE, "REPLACED");
 
-    ws.serializeAttachment({ memberId, at: Date.now() } satisfies Attachment);
+    const client = pending.get(ws) ?? null;
+    pending.delete(ws);
+    ws.serializeAttachment({ memberId, at: Date.now(), client } satisfies Attachment);
     const member = room.members[memberId];
     this.send(ws, { type: "welcome", memberId, token: member.token, state: this.publicState(room), you: you(member) });
     this.broadcast(room, ws);

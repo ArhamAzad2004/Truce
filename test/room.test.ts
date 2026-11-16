@@ -135,18 +135,21 @@ describe("rooms", () => {
 });
 
 describe("caps", () => {
-  it("refuses a thirteenth socket, but drops idle ones first to make room", async () => {
+  it("can't be locked by open tabs: idle sockets are dropped to let a member back in", async () => {
     const { code } = await createRoom();
     const members = [];
     for (let i = 1; i <= LIMITS.members; i++) members.push(await join(code, `Guest ${i}`));
-    for (let i = 0; i < LIMITS.sockets - LIMITS.members; i++) {
-      const again = await open(code); // the same people in a second tab
-      again.send({ type: "resume", token: members[i].welcome.token });
-      await again.until("welcome");
+    for (const member of members) { // every member in a second tab: the most a room can seat
+      const tab = await open(code);
+      tab.send({ type: "resume", token: member.welcome.token });
+      await tab.until("welcome");
     }
-    const extra = await open(code);
-    expect(await extra.next()).toEqual({ type: "error", code: "ROOM_FULL" });
-    expect(await extra.closed).toBe(1008);
+    const idle = [];
+    while (2 * LIMITS.members + idle.length < LIMITS.sockets) idle.push(await open(code)); // connected, never joined
+    const back = await open(code);
+    for (const sock of idle) expect(await sock.closed).toBe(1008);
+    back.send({ type: "resume", token: members[0].welcome.token });
+    expect((await back.until("welcome")).memberId).toBe(members[0].welcome.memberId);
   });
 
   it("lets one person hold two sockets; a third stands the oldest down", async () => {

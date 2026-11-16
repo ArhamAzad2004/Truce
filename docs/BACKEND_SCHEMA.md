@@ -79,7 +79,7 @@ Never sent: tokens, other members' answers or favourites, lower-ranked films, th
 
 ## 3. HTTP endpoints
 
-All under the app's own origin. JSON in and out. Errors are `{ "error": "<CODE>" }` with the status shown. Rate limits are per client address per 60 s, exact and global (counted in the Catalog object; IPv6 by /64). Two daily budgets also apply per address: 6 new rooms, and 25 searches that are not already cached (the 26th answers 503 `QUOTA_REACHED` with `scope: "day"`).
+All under the app's own origin. JSON in and out. Errors are `{ "error": "<CODE>" }` with the status shown. Rate limits are per client address per 60 s, exact and global (counted in the Catalog object; IPv6 by /64). Daily budgets also apply per address: 6 new rooms; 25 searches that are not already cached (the 26th answers 503 `QUOTA_REACHED` with `scope: "day"`); and 10 settles, counted against the host's address (the 11th answers `error QUOTA_REACHED` with `scope: "day"`). Every `/api/` call from a browser must come from Truce's own pages: a `Sec-Fetch-Site` other than `same-origin`, or an `Origin` other than the app's, gets 403 `FORBIDDEN_ORIGIN`.
 
 | Method and path | Request | 200 response | Errors | Rate limit |
 |---|---|---|---|---|
@@ -161,7 +161,7 @@ Text frames, JSON, one object per frame, discriminated on `type`. A room handles
 | Code | Meaning | Socket after |
 |---|---|---|
 | `BAD_MESSAGE` | Not JSON, over 2 KB, unknown type, failed validation, an unknown `resume` token, or a favourite id the Catalog has not seen | Open (closed if it was the first frame) |
-| `ROOM_FULL` | 8 members already, or 12 joined sockets. One member may hold 2 sockets; a third closes the oldest with code 4001, and that client does not reconnect by itself. At 12 sockets the room first closes sockets that never joined | Closed (1008) |
+| `ROOM_FULL` | 8 members already, or 18 joined sockets. A client that has a seat token treats it as temporary and retries. One member may hold 2 sockets; a third closes the oldest with code 4001, and that client does not reconnect by itself. At 12 sockets the room first closes sockets that never joined | Closed (1008) |
 | `NAME_TAKEN` | Nickname in use in this room (compared case-insensitively after NFKC) | Open; client may retry `join` |
 | `NOT_HOST` | Host-only message (`setRegion`, `settle`, `reopen`) from a non-host | Open |
 | `WRONG_PHASE` | Message not allowed in the current phase or state (join after the lobby, settle with fewer than 2 ready, settle while one is running, no attempts left) | Open |
@@ -179,7 +179,7 @@ A failed settle sends the `error` to the host's socket and also sets `notice` in
 | Limit | Value |
 |---|---|
 | Members per room | 8 |
-| Sockets per room | 12 |
+| Sockets per room | 18 (2 per member) |
 | Nickname | 1 to 20 chars after trim and NFKC; letters, digits, space, `-`, `_`, `'`; unique per room |
 | Inbound frame | 2 KB |
 | Messages per socket | 20 per 10 s, then close |
@@ -206,7 +206,7 @@ POST /api/rooms ──► lobby ──settle──► settling ──► result 
                       └────────────── reopen (host) ──┘
 ```
 
-- **Create:** state written once, `setAlarm(expiresAt)`.
+- **Create:** `setAlarm(expiresAt)` first, then the state is written once, so a room can never be stored without its deletion booked.
 - **Unknown code:** the object finds no `room` key, answers 404 and writes nothing.
 - **Join:** lobby only. The host's first frame is `join {nickname, hostToken}`.
 - **Editing:** `setAnswers` and `setFavourites` clear that member's `ready`. `setRegion` clears everyone's `serviceIds` and `ready`.

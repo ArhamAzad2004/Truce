@@ -13,6 +13,8 @@ const json = (body: unknown, status = 200, cache = "no-store") =>
       "Cache-Control": cache,
       "X-Content-Type-Options": "nosniff",
       "Referrer-Policy": "no-referrer",
+      "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+      "Cross-Origin-Resource-Policy": "same-origin",
     },
   });
 
@@ -33,6 +35,15 @@ export default {
     if (pathname === "/api/health") {
       if (request.method !== "GET") return json({ error: "METHOD_NOT_ALLOWED" }, 405);
       return json({ ok: true });
+    }
+
+    // Only Truce's own pages may call the API from a browser. Without this, any website could make its
+    // visitors' browsers run searches or open rooms, spending their budgets and the shared allowance.
+    // Browsers always send these headers; tools that omit them are covered by the per-address limits.
+    const site = request.headers.get("Sec-Fetch-Site");
+    const origin = request.headers.get("Origin");
+    if ((site !== null && site !== "same-origin") || (origin !== null && origin !== url.origin)) {
+      return json({ error: "FORBIDDEN_ORIGIN" }, 403);
     }
 
     const catalog = env.CATALOG.getByName("catalog");
@@ -89,7 +100,7 @@ export default {
       if (!CODE_RE.test(ws[1])) return json({ error: "BAD_REQUEST" }, 400);
       const upgrade = request.headers.get("Upgrade")?.toLowerCase() === "websocket";
       // Browsers always send Origin on a WebSocket handshake; only this app's own pages may connect.
-      if (upgrade && request.headers.get("Origin") !== url.origin) return json({ error: "FORBIDDEN_ORIGIN" }, 403);
+      if (upgrade && origin !== url.origin) return json({ error: "FORBIDDEN_ORIGIN" }, 403); // and it must be present
       if (await limited("sockets")) return json({ error: "RATE_LIMITED" }, 429);
       return env.ROOM.getByName(ws[1]).fetch(request);
     }

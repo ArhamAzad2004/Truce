@@ -1,7 +1,7 @@
 // Limits and formats shared by the Worker and the browser. Mirrors docs/BACKEND_SCHEMA.md §5.
 export const LIMITS = {
   members: 8,
-  sockets: 12,
+  sockets: 18, // 8 members x 2 tabs, plus room for a couple of stale sockets after a network switch
   frameBytes: 2048,
   floodCount: 20,
   floodWindowMs: 10_000,
@@ -19,7 +19,7 @@ export const LIMITS = {
   // The daily budgets stop one person from draining the film allowance that everyone shares.
   rate: {
     rooms: [5, 60_000], sockets: [20, 60_000], listings: [30, 60_000],
-    roomsDay: [6, 86_400_000], newSearchesDay: [25, 86_400_000],
+    roomsDay: [6, 86_400_000], newSearchesDay: [25, 86_400_000], settlesDay: [10, 86_400_000],
   },
 } as const;
 

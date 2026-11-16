@@ -78,7 +78,8 @@ export function useRoom(code: string) {
         } else if (msg.type === "you") {
           setYou(msg.you);
         } else if (msg.type === "error") {
-          if (msg.code === "ROOM_FULL") stop("full");
+          // With a seat of our own, "full" means stale sockets that will close soon: retry instead of giving up.
+          if (msg.code === "ROOM_FULL" && !loadSeat(code).token) stop("full");
           else if (msg.code === "EXPIRED") stop("expired");
           else if (msg.code === "WRONG_PHASE" && !joined) stop("late");
           else if (msg.code === "NAME_TAKEN") setJoinError(msg.code);

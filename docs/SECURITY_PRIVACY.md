@@ -106,21 +106,25 @@ Static assets, via `public/_headers`. API responses set `X-Content-Type-Options`
 
 | Scope | Limit | Enforced by |
 |---|---|---|
+| Any API call from another website | Refused with 403 (`Sec-Fetch-Site` / `Origin` must be Truce's own) | Worker |
 | Create room | 5 per minute and 6 per day per client address | Catalog object (`allow`) |
+| Settle | 10 per day per client address (the host's) | Room object, counted in the Catalog |
 | Search + regions + services | 30 per minute per client address | Catalog object (`allow`) |
 | New searches (not already cached) | 25 per day per client address | Catalog object (`search`) |
 | WebSocket upgrade | 20 per minute per client address | Catalog object (`allow`) |
 | Messages per socket | 20 per 10 s, then close | Room object |
-| Sockets per room | 12; at most 2 per member (a third closes the oldest with code 4001) | Room object |
+| Sockets per room | 18 (8 members x 2 tabs, plus slack); at most 2 per member (a third closes the oldest with code 4001); sockets that never joined are dropped first | Room object |
 | Members per room | 8 | Room object |
 | Frame size | 2 KB | Room object |
 | Settle | one at a time; 5 attempts per room | Room object |
 | AI calls | at most 2 per settle, inside one 12 s deadline | Pick pipeline |
 | MOTN requests | 120 per UTC day (search stops at 100); 950 per month | Catalog object |
 
-Per-address limits are counted in the Catalog object's memory, keyed by `CF-Connecting-IP` (IPv6 by its /64 prefix). The Catalog is a singleton, so the counts are exact and global. Addresses are never written to storage or logs, and the counters vanish when the object sleeps. Cloudflare's Rate Limiting binding was not used: its docs do not say whether it is free, and its counts are approximate and per location (checked 2026-11-16).
+Per-address limits are counted in the Catalog object's memory, keyed by `CF-Connecting-IP` (IPv6 by its /64 prefix, after expanding `::`). The Catalog is a singleton, so the counts are exact and global. Addresses are never written to storage or logs; ended windows are dropped at least hourly, and all counters vanish when the object sleeps. A room keeps each socket's address in the socket's hibernation attachment (not storage) only to count settles.
 
-**Accepted risk.** The daily budgets stop one person or one network from draining the shared film allowance. Someone with many addresses (a botnet, or a rotating proxy) can still push Truce into its resting state for a day by running new searches or by opening rooms and settling with varied answers (up to 25 upstream calls per room). The damage is bounded: nothing is billed, cached answers keep working, and the caps reset. Closing it fully would need accounts or a challenge page, which are out of scope for v1.
+**Storage sweep.** The Catalog runs a daily alarm that deletes search entries (`q:`) older than 30 days, candidate pages (`c:`) older than 24 hours, and past day and month counters. Film records (`f:`) are public film data, not user data, and are kept. Cloudflare's Rate Limiting binding was not used: its docs do not say whether it is free, and its counts are approximate and per location (checked 2026-11-16).
+
+**Accepted risk.** The daily budgets (rooms, new searches, settles) stop one person or one network from draining the shared film allowance, and the cross-site check stops other websites from spending their visitors' budgets. Someone with many addresses (a botnet, or a rotating proxy) can still push Truce into its resting state for a day by running new searches or by opening rooms and settling with varied answers (up to 25 upstream calls per room). The damage is bounded: nothing is billed, cached answers keep working, and the caps reset. Closing it fully would need accounts or a challenge page, which are out of scope for v1.
 
 ## 7. Abuse handling
 
@@ -174,7 +178,7 @@ Tick in Phase 9, each with evidence (test name, command output or screenshot). U
 - [x] No service logos anywhere; services are text — services render as text labels and tags only
 - [ ] No third-party requests other than `cdn.movieofthenight.com` (network tab); fonts load from the app's own origin
 - [x] The MOTN items marked [verify] in [TRD §10](TRD.md#10-verified-platform-facts) checked with a real key — endpoints, fields, posters and UAE services checked live; the quota reply and the billing cycle are still open
-- [x] `/security-review` run and findings closed — independent review 2026-11-16: 0 critical, 1 high, 1 medium, 5 low. All fixed except the many-address quota drain, recorded as an accepted risk in section 6
+- [x] `/security-review` run and findings closed — independent review 2026-11-16: 0 critical, 1 high, 1 medium, 5 low. All fixed except the many-address quota drain, recorded as an accepted risk in section 6; second independent review 2026-11-16: 0 critical, 1 high, 2 medium, 6 low, all fixed in code (settle budget, cross-site check, storage sweep, IPv6 key, socket cap, alarm order, window sweep, HSTS, SHA-pinned CI actions). Personal email in the first commit and GitHub repo settings are owner decisions
 
 ## 9. Third-party terms
 
@@ -208,11 +212,11 @@ Checked 2026-11-16.
 >
 > Truce has no accounts and no tracking.
 >
-> **What we keep, and for how long.** Your nickname, the answers you tap, and the films you pick as favourites. They live in your room and are deleted automatically 4 hours after the room was opened. We guess the room's country from the host's connection so we can check what is streaming there; the host can change it.
+> **What we keep, and for how long.** Your nickname, the answers you tap, and the films you pick as favourites. They live in your room and are deleted automatically 4 hours after the room was opened. Cloudflare, which hosts Truce, may keep a recovery copy of stored data for up to 30 days; we never restore rooms from it. We guess the room's country from the host's connection so we can check what is streaming there; the host can change it.
 >
 > **Who sees what.** Everyone in your room sees your nickname, whether you are ready, and the reason the pick fits you. Your taps and your three films are never shown as a list, and nobody sees them in the lobby. The reason on the final ticket is written from them, so it may name a film you picked or the mood you chose, and everyone in the room can read it.
 >
-> **Who else is involved.** Film details, posters and streaming availability come from the Streaming Availability API by Movie of the Night. When you search for a film, it receives your search words, but not your nickname or who you are. We keep search results for up to 30 days so the same search is faster next time; they are not linked to you. Posters load straight from its image servers, so they see your device's IP address, as any website does when it shows you an image. When the pick is ranked by a language model, it receives the group's tapped answers and favourite film titles labelled only as "P1", "P2" and so on. It never receives your nickname or anything you typed. The app runs on Cloudflare.
+> **Who else is involved.** Film details, posters and streaming availability come from the Streaming Availability API by Movie of the Night. When you search for a film, it receives your search words, but not your nickname or who you are. We keep search words and results for up to 30 days, then delete them, so the same search is faster next time; they are not linked to you. Posters load straight from its image servers, so they see your device's IP address, as any website does when it shows you an image. When the pick is ranked by a language model, it receives the group's tapped answers and favourite film titles labelled only as "P1", "P2" and so on. It never receives your nickname or anything you typed. The app runs on Cloudflare.
 >
 > **Stopping abuse.** We count requests per network address for up to a day so one person cannot use up the service for everyone. The count is held in memory only. It is never saved or logged.
 >

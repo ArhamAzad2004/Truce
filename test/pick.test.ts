@@ -166,6 +166,34 @@ describe("settle", () => {
   });
 });
 
+describe("settle budget", () => {
+  it("gives each network a daily number of settles", async () => {
+    const { code, hostToken } = await createRoom();
+    const sock = (ip: string) => exports.default.fetch(`http://truce.test/api/rooms/${code}/ws`, {
+      headers: { Upgrade: "websocket", Origin: "http://truce.test", "CF-Connecting-IP": ip },
+    });
+    const res = await sock("198.51.100.20");
+    const ws = res.webSocket!;
+    ws.accept();
+    const got: unknown[] = [];
+    ws.addEventListener("message", (e) => got.push(JSON.parse(e.data as string)));
+    ws.send(JSON.stringify({ type: "join", nickname: "Sam", hostToken }));
+    await runInDurableObject(env.CATALOG.getByName("catalog"), async (catalog) => {
+      for (let i = 0; i < 10; i++) await (catalog as unknown as { allow(b: string, c: string): Promise<boolean> }).allow("settlesDay", "198.51.100.20");
+    });
+    await runInDurableObject(env.ROOM.getByName(code), (_room, state) => {
+      const room = state.storage.kv.get<{ members: Record<string, { ready: boolean; answers: object }> }>("room")!;
+      for (const m of Object.values(room.members)) { m.ready = true; m.answers = { mood: "funny", energy: "awake", maxMinutes: null, serviceIds: ["netflix"] }; }
+      room.members.other = { ...Object.values(room.members)[0] };
+      state.storage.kv.put("room", room);
+    });
+    ws.send(JSON.stringify({ type: "settle" }));
+    for (let i = 0; i < 50 && !got.some((m) => (m as { type: string }).type === "error"); i++) await new Promise((r) => setTimeout(r, 20));
+    expect(got).toContainEqual({ type: "error", code: "QUOTA_REACHED", scope: "day" });
+    ws.close();
+  });
+});
+
 describe("veto", () => {
   it("gives each voter one veto, moves to a new film each time, and ends cleanly when the list runs out", async () => {
     const { code, hostToken } = await createRoom();

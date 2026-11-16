@@ -26,8 +26,7 @@ export function SiteFooter() {
 
         <h3>What we keep, and for how long</h3>
         <p>
-          Your nickname, the answers you tap, and the films you pick as favourites. They live in your room and are deleted
-          automatically 4 hours after the room was opened. We guess the room's country from the host's connection so we can
+          Your nickname, the answers you tap, and the films you pick as favourites. They live in your room and are deleted automatically 4 hours after the room was opened. Cloudflare, which hosts Truce, may keep a recovery copy of stored data for up to 30 days; we never restore rooms from it. We guess the room's country from the host's connection so we can
           check what is streaming there; the host can change it.
         </p>
 
@@ -41,8 +40,7 @@ export function SiteFooter() {
         <h3>Who else is involved</h3>
         <p>
           Film details, posters and streaming availability come from the Streaming Availability API by Movie of the Night. When
-          you search for a film, it receives your search words, but not your nickname or who you are. We keep search results
-          for up to 30 days so the same search is faster next time; they are not linked to you. Posters load straight from its
+          you search for a film, it receives your search words, but not your nickname or who you are. We keep search words and results for up to 30 days, then delete them, so the same search is faster next time; they are not linked to you. Posters load straight from its
           image servers, so they see your device's IP address, as any website does when it shows you an image.
         </p>
         <p>
