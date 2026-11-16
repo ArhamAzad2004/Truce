@@ -62,9 +62,9 @@ Full reasoning goes in `DECISIONS.md` (Phase 2).
 - **Done when:** live URL renders the landing page and `/api/health` returns 200.
 
 ### Phase 4 — Slice 2: live room · Fable 5.2
-- [ ] `POST /api/rooms`; `Room` DO with hibernation, attachments, alarm expiry; `join {nickname, hostToken?}` / resume, presence; lobby with QR and Web Share.
-- [ ] Shared zod schemas and socket limits.
-- [ ] Tests: join (with and without `hostToken`), join outside lobby, resume, duplicate nickname, room full, bad message, expiry.
+- [x] `POST /api/rooms`; `Room` DO with hibernation, attachments, alarm expiry; `join {nickname, hostToken?}` / resume, presence; lobby with QR and Web Share.
+- [x] Shared zod schemas and socket limits. WebSocket Origin check (own origin only) moved here from Phase 9.
+- [x] Tests: join (with and without `hostToken`), join outside lobby, resume, duplicate nickname, room full, bad message, expiry.
 - **Done when:** two phones see each other join/leave live, refresh resumes the same member, room is gone after its TTL.
 
 ### Phase 5 — Slice 3: inputs · Opus 5.5
@@ -91,7 +91,7 @@ Full reasoning goes in `DECISIONS.md` (Phase 2).
 - **Done when:** each member can veto once, no film repeats, no dead-end screen.
 
 ### Phase 9 — Hardening · Fable 5.2
-- [ ] Rate-limit bindings **[verify Free plan]** (fallback: in-memory per-isolate counter), WS Origin check against `ALLOWED_ORIGINS`, `public/_headers` (CSP with `img-src 'self' https://cdn.movieofthenight.com`, `frame-ancestors 'none'`, `Referrer-Policy: no-referrer`, `X-Content-Type-Options`), message size and flood caps.
+- [ ] Rate-limit bindings **[verify Free plan]** (fallback: in-memory per-isolate counter), `public/_headers` (CSP with `img-src 'self' https://cdn.movieofthenight.com`, `frame-ancestors 'none'`, `Referrer-Policy: no-referrer`, `X-Content-Type-Options`), message size and flood caps.
 - [ ] `/security-review`, `npm audit`, grep `dist/` for secrets.
 - **Done when:** every `SECURITY_PRIVACY.md` checklist row is ticked with evidence.
 

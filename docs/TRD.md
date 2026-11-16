@@ -135,7 +135,6 @@ Detail, parameters and the AI contract: [BACKEND_SCHEMA.md §7 to §10](BACKEND_
 | `AI_API_KEY` | secret | same | Groq key. **If unset, the AI step is skipped and the fallback is used** (kill switch) |
 | `AI_BASE_URL` | var | `wrangler.jsonc` | `https://api.groq.com/openai/v1` |
 | `AI_MODEL` | var | `wrangler.jsonc` | `openai/gpt-oss-20b` |
-| `ALLOWED_ORIGINS` | var | `wrangler.jsonc` | Comma-separated origins accepted for WebSocket upgrades |
 | `MOTN_MODE` | var | `.dev.vars` only | `fixtures` (default in local dev) or `live`. Production is always live |
 | `ROOM` | DO binding | `wrangler.jsonc` | `Room` class, `new_sqlite_classes` migration |
 | `CATALOG` | DO binding | `wrangler.jsonc` | `Catalog` class, same migration list |

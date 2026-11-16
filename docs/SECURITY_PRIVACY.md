@@ -28,7 +28,7 @@ What Truce protects, from whom, and what data it touches. Shapes and limits refe
 |---|---|---|---|---|
 | T1 | Impersonate a member or the host | Spoofing | 128-bit random token per member, sent only in the first WebSocket frame, never in a URL, never broadcast; the host seat is claimed with `hostToken` in `join` | Token readable by anyone with the unlocked phone |
 | T2 | Guess a room code | Spoofing | 50-bit random codes; per-IP limit on upgrades; unknown codes return a plain 404 and write nothing | A shared link is a capability: anyone who has it can join while the room is in the lobby |
-| T3 | Malicious site opens a socket from a member's browser | Spoofing | `Origin` checked against `ALLOWED_ORIGINS` on upgrade; no cookies, so nothing rides along automatically | None known |
+| T3 | Malicious site opens a socket from a member's browser | Spoofing | `Origin` must equal the app's own origin on upgrade; no cookies, so nothing rides along automatically | None known |
 | T4 | Forge or oversize messages | Tampering | zod validation on every frame; 2 KB cap; phase and role checks in the room; films are copied from the server's cache by id, never taken from the client | None known |
 | T5 | Script or markup in a nickname | Tampering / XSS | Allow-list of characters, NFKC, 20 chars; React text escaping only; CSP without inline script | Rude nicknames are possible (see section 7) |
 | T6 | Prompt injection through user input | Tampering | No user free text reaches the model: members are `P1..Pn`, inputs are enums and film ids | A film title from MOTN could carry odd text; titles are length-capped and output validation limits the effect |

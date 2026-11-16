@@ -1,22 +1,30 @@
-import { useEffect, useState } from "react";
+import { type FormEvent, useState } from "react";
+import { CODE_RE } from "../../shared/limits";
 import { Attribution } from "../components/Attribution";
 import "./Landing.css";
 
-type Status = "checking" | "ready" | "offline";
+// Accepts a typed code (spaces and dashes ignored) or a pasted invite link.
+function readCode(input: string) {
+  const upper = input.toUpperCase();
+  const fromLink = upper.match(/\/R\/([^/?#\s]+)/);
+  const code = (fromLink ? fromLink[1] : upper).replace(/[\s-]/g, "");
+  return CODE_RE.test(code) ? code : null;
+}
 
-export function Landing() {
-  const [status, setStatus] = useState<Status>("checking");
+export function Landing({ go }: { go: (to: string) => void }) {
+  const [askCode, setAskCode] = useState(false);
+  const [value, setValue] = useState("");
+  const [bad, setBad] = useState(false);
 
-  useEffect(() => {
-    const ctrl = new AbortController();
-    fetch("/api/health", { signal: ctrl.signal })
-      .then((r) => setStatus(r.ok ? "ready" : "offline"))
-      .catch((e) => { if (e.name !== "AbortError") setStatus("offline"); });
-    return () => ctrl.abort();
-  }, []);
+  const joinByCode = (event: FormEvent) => {
+    event.preventDefault();
+    const code = readCode(value);
+    if (code) go(`/r/${code}`);
+    else setBad(true);
+  };
 
   return (
-    <main className="landing">
+    <main className="screen landing">
       <span className="wordmark" aria-label="Truce">TRUCE</span>
 
       <article className="ticket landing-ticket" aria-labelledby="landing-title">
@@ -41,15 +49,25 @@ export function Landing() {
         </ol>
       </article>
 
-      <div className="landing-actions">
-        <button className="btn btn-primary" type="button" aria-disabled="true" aria-describedby="landing-status">
-          Start a room
-        </button>
-        <p id="landing-status" className="landing-status" role="status">
-          {status === "checking" && "Warming up the projector…"}
-          {status === "ready" && "Rooms open soon. The projector is warm."}
-          {status === "offline" && "Can't reach Truce right now. Try again in a moment."}
-        </p>
+      <div className="stack">
+        <button className="btn btn-primary" type="button" onClick={() => go("/new")}>Open a room</button>
+        {askCode ? (
+          <form className="code-form" onSubmit={joinByCode} noValidate>
+            <label htmlFor="room-code">Room no.</label>
+            <div className="field-row">
+              <input
+                id="room-code" className="input input-room" value={value} autoFocus
+                autoComplete="off" autoCapitalize="characters" spellCheck={false} maxLength={120}
+                aria-invalid={bad} aria-describedby={bad ? "room-code-error" : undefined}
+                onChange={(e) => { setValue(e.target.value); setBad(false); }}
+              />
+              <button className="btn btn-primary" type="submit">Join</button>
+            </div>
+            {bad && <p id="room-code-error" className="error error-room" role="alert">Room numbers are 10 letters and digits. Check the invite.</p>}
+          </form>
+        ) : (
+          <button className="btn-text" type="button" onClick={() => setAskCode(true)}>Got a room code?</button>
+        )}
       </div>
 
       <footer className="landing-footer">

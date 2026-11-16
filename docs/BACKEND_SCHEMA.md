@@ -4,7 +4,7 @@ The contract between the browser, the Worker, the Room Durable Object and the Ca
 
 Film and streaming data come from the **Streaming Availability API by Movie of the Night** (called "MOTN" in these docs). Items marked **[verify]** could not be confirmed from the public docs and must be checked with a real key in Phase 5.
 
-There is no database schema. Each room is one JSON value stored under the key `room` in its own Durable Object (`ctx.storage.put("room", state)`), written once per mutation. The Catalog object keeps cache entries and two counters as plain keys (section 7).
+There is no database schema. Each room is one JSON value stored under the key `room` in its own Durable Object (`ctx.storage.kv.put("room", state)`), written once per mutation. The Catalog object keeps cache entries and two counters as plain keys (section 7).
 
 ## 1. Room state (private, server only)
 
@@ -83,25 +83,27 @@ All under the app's own origin. JSON in and out. Errors are `{ "error": "<CODE>"
 |---|---|---|---|---|
 | `GET /api/health` | none | `{ "ok": true }` | none | none |
 | `POST /api/rooms` | empty body | `{ "code": "7K3M9QX2TB", "hostToken": "<22 chars>" }` | 429 `RATE_LIMITED`, 503 `QUOTA_REACHED` | 5 |
-| `GET /api/rooms/:code/ws` | WebSocket upgrade; `Origin` must be in `ALLOWED_ORIGINS` | 101 | 400 `BAD_REQUEST` (malformed code), 403 `FORBIDDEN_ORIGIN`, 404 `NOT_FOUND` (unknown or expired; writes nothing), 426 (not an upgrade), 429 `RATE_LIMITED` | 20 |
+| `GET /api/rooms/:code/ws` | WebSocket upgrade; `Origin` must equal the app's own origin | 101 | 400 `BAD_REQUEST` (malformed code), 403 `FORBIDDEN_ORIGIN`, 404 `NOT_FOUND` (unknown or expired; writes nothing), 426 `UPGRADE_REQUIRED` (room exists, not an upgrade), 429 `RATE_LIMITED` | 20 |
 | `GET /api/search?q=` | `q`: 3 to 60 chars after trim | `[{ "id": "82", "title": "The Godfather", "year": 1972, "poster": "https://cdn.movieofthenight.com/…" }]` (max 8, movies only) | 400 `BAD_REQUEST`, 429 `RATE_LIMITED`, 502 `UPSTREAM`, 503 `QUOTA_REACHED` | 30 |
 | `GET /api/regions` | none | `[{ "code": "AE", "name": "…" }]` (the countries MOTN supports) | 429, 502, 503 as above | 30 (shared with search) |
 | `GET /api/services?region=` | `region`: two letters | `[{ "id": "netflix", "name": "Netflix" }]` (up to 12, in MOTN's popularity order; services that offer subscription or free viewing). `[]` for a country MOTN does not cover | 400, 429, 502, 503 as above | 30 (shared with search) |
 
 - `POST /api/rooms` generates the code and host token with `crypto.getRandomValues`, sets `region` from `request.cf.country` (falls back to `US` when the country is missing or not supported by MOTN), initialises the room and sets the expiry alarm. It answers 503 `QUOTA_REACHED` while the data quota is used up, so nobody opens a room that cannot finish.
+- A browser cannot read the status of a failed WebSocket handshake. When a socket never opens, the client sends a plain `GET` to the same path: 404 means "no such room", 426 means the room exists and the failure was the network.
+- The Origin check compares the `Origin` header with the origin of the request URL, so there is no allow-list to configure. It applies to upgrades only.
 - Search, regions and services are trimmed views served by the Catalog object (section 7). No MOTN key and no raw MOTN response reaches the client.
 - `QUOTA_REACHED` bodies carry `"scope": "day"` or `"month"` so the client can say when Truce is back.
 - API responses send `Cache-Control: no-store` (except search, regions and services: `public, max-age=3600`) and `X-Content-Type-Options: nosniff`.
 
 ## 4. WebSocket protocol
 
-Text frames, JSON, one object per frame, discriminated on `type`. Inbound frames over 2 KB or failing validation get `error BAD_MESSAGE`. The first frame must be `join` or `resume`; anything else closes the socket.
+Text frames, JSON, one object per frame, discriminated on `type`. Inbound frames over 2 KB or failing validation get `error BAD_MESSAGE`. The first frame must be `join` or `resume`; anything else closes the socket. `join` and `resume` are refused with `BAD_MESSAGE` on a socket that already has a member.
 
 ### Client → server
 
 | `type` | Fields | Who / when | Effect |
 |---|---|---|---|
-| `join` | `nickname: string` (1 to 20, see limits) · `hostToken?: string` | Anyone, **lobby only** (`WRONG_PHASE` otherwise) | Creates a member. With the room's `hostToken`, that member takes the host seat and keeps the token as their member token |
+| `join` | `nickname: string` (1 to 20, see limits) · `hostToken?: string` | Anyone, **lobby only** (`WRONG_PHASE` otherwise) | Creates a member. With the room's `hostToken`, that member takes the host seat and keeps the token as their member token. A wrong `hostToken` is `BAD_MESSAGE`. A repeated host join (the first `welcome` was lost) re-attaches to the host seat in any phase |
 | `resume` | `token: string` (22 chars) | Any phase | Re-attaches the socket to an existing member |
 | `setAnswers` | `mood: Mood` · `energy: Energy` · `maxMinutes: 90 \| 120 \| 150 \| null` · `serviceIds: string[]` (1 to 12, each `/^[a-z0-9]{2,20}$/` and offered in the room's region) | Member, lobby | Stores answers; clears that member's `ready` |
 | `setFavourites` | `ids: string[]` (1 to 3 distinct film ids) | Member, lobby | Server copies title, year, poster, genres, directors and cast from the Catalog's cache for each id. An id that never appeared in a search result is rejected with `BAD_MESSAGE`, so this message never costs an upstream request. Clears that member's `ready` |
@@ -155,7 +157,7 @@ Text frames, JSON, one object per frame, discriminated on `type`. Inbound frames
 | Code | Meaning | Socket after |
 |---|---|---|
 | `BAD_MESSAGE` | Not JSON, over 2 KB, unknown type, failed validation, an unknown `resume` token, or a favourite id the Catalog has not seen | Open (closed if it was the first frame) |
-| `ROOM_FULL` | 8 members already, or 12 sockets | Closed |
+| `ROOM_FULL` | 8 members already, or 12 joined sockets. At 12 sockets the room first closes sockets that never joined | Closed (1008) |
 | `NAME_TAKEN` | Nickname in use in this room (compared case-insensitively after NFKC) | Open; client may retry `join` |
 | `NOT_HOST` | Host-only message (`setRegion`, `settle`, `reopen`) from a non-host | Open |
 | `WRONG_PHASE` | Message not allowed in the current phase or state (join after the lobby, settle with fewer than 2 ready, settle while one is running, no attempts left) | Open |

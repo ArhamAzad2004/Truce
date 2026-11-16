@@ -117,8 +117,8 @@ Every screen: wordmark lozenge top left, a DM Mono label top right (step, role o
   - Ticket label: "Room no." · button "Copy invite link" · after copying: "Link copied." *(proposed)*
   - Under the ticket: "Scan or share. Nickname only, no account."
   - Region: "Streaming region: United Kingdom" · text button "Change" (host only; lists only the countries the film listings cover). Changing it clears everyone's services and ready stamps; members see "The region changed. Pick your services again." *(proposed)*
-  - Seat row header: "Row A · 2 of 3 ready"
-  - Seat status: stamp "Ready", or "Picking films…" while deciding; host row adds "host", own row adds "you"
+  - Seat row header: "Row A · 2 of 8 seats taken" (becomes "2 of 3 ready" when picks arrive in Phase 5)
+  - Seat status: "Seated" or "Away"; from Phase 5 the stamp "Ready", or "Picking films…" while deciding; host row adds "host", own row adds "you"
   - Member not done yet: primary "Start my picks" *(proposed)*
   - Host, fewer than two ready: button disabled, note "Settle it opens when two of you are ready." *(proposed)*
   - Host, two or more ready: "Settle it" · note "Two are ready. The lights go down when you tap."
