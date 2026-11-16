@@ -29,6 +29,15 @@
         ],
         "createdAt": "2026-11-16T05:43:19.641Z",
         "reason": "Hairline-divided list rows and table cells with vertically centred text in fixed-height rows; exploratory mockups only"
+      },
+      {
+        "rule": "radial-halo",
+        "value": "*",
+        "files": [
+          "design/mockups/06-night-ticket/**"
+        ],
+        "createdAt": "2026-11-16T05:54:18.975Z",
+        "reason": "Lantern in the shared poster placeholder and the house-light glow the owner asked for"
       }
     ]
   }
