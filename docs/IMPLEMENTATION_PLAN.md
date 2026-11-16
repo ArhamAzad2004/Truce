@@ -84,6 +84,7 @@ Full reasoning goes in `DECISIONS.md` (Phase 2).
 - [x] Groq via one `fetch` to its OpenAI-compatible endpoint, no SDK (`AI_BASE_URL`, `AI_MODEL`, `AI_API_KEY`; unset key = step skipped), prompt contract, `json_schema` strict, zod validation, one retry inside one shared 12 s deadline, fallback on any failure.
 - [x] Tests with a fake `fetch`: valid, hallucinated ID, missing member, over-long reason, 429, timeout, deadline spent.
 - [x] Test that the prompt holds no overview, cast, nickname or token (MOTN terms: minimum data, inference only). The terms question that blocked this phase is closed by `DECISIONS.md` 016.
+- Checked live on 2026-11-16 with the real model: five settles, each answered in under 4 s with valid output.
 - **Done when:** valid AI ranking replaces the deterministic one; every failure silently yields the Phase 6 result; provider switch is env-only.
 
 ### Phase 8 — Slice 6: veto and edge states · Opus 5.5, Fable 5.2 review

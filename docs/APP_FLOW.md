@@ -174,7 +174,7 @@ Every screen: wordmark lozenge top left, a DM Mono label top right (step, role o
   - Top right: "Admit 3 · Tonight" (the count is the number of people in the pick)
   - Service tag: "On Netflix"
   - Section label: "Why this one"
-  - Reason: "**Sam,** you picked The Quiet Orbit. This has the same slow-burn wonder."
+  - Reason: "**Sam:** You picked The Quiet Orbit. This has the same slow-burn wonder."
   - Veto button: "Tear it up and use my veto"
   - Note: "One veto each. Tearing shows the runner-up."
   - Tokens label: "Vetoes left"

@@ -20,7 +20,6 @@ const runtime = (minutes: number) => {
   const h = Math.floor(minutes / 60), m = minutes % 60;
   return h ? (m ? `${h} h ${m} min` : `${h} h`) : `${m} min`;
 };
-const lower = (text: string) => text.charAt(0).toLowerCase() + text.slice(1);
 
 type Props = { state: PublicState; memberId: string | null; you: You; onReopen: () => void };
 
@@ -58,7 +57,7 @@ export function Reveal({ state, memberId, you, onReopen }: Props) {
           <h2 className="label ink-muted">Why this one</h2>
           <ul className="reasons">
             {reasons.map((m) => (
-              <li key={m.id}><strong>{m.nickname},</strong> {lower(pick.reasons[m.id])}</li>
+              <li key={m.id}><strong>{m.nickname}:</strong> {pick.reasons[m.id]}</li>
             ))}
           </ul>
         </div>

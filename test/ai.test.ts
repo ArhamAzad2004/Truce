@@ -56,6 +56,7 @@ describe("AI ranking", () => {
     ["an unknown member", [entry("1", "ok", ["P1", "P7"]), entry("2"), entry("3")]],
     ["an over-long reason", [entry("1", "x".repeat(141)), entry("2"), entry("3")]],
     ["a link in a reason", [entry("1", "See www.example.com"), entry("2"), entry("3")]],
+    ["a raw setting name in a reason", [entry("1", "It suits your mind_bending mood."), entry("2"), entry("3")]],
     ["a repeated film", [entry("1"), entry("1"), entry("3")]],
     ["too few films", [entry("1"), entry("2")]],
   ])("falls back after %s", async (_name, ranking) => {

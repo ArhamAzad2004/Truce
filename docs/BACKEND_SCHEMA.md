@@ -280,7 +280,7 @@ One `POST {AI_BASE_URL}/chat/completions` with `fetch` (no SDK; `model = AI_MODE
 
 Candidates are capped at 10; favourites at 3 per member. This is the least data that still lets the model write a reason.
 
-**System rules:** rank exactly 3 films, using only ids from `candidates`; for each film write one reason for every member; address the member as "you"; at most 140 characters; use only facts present in the input; no names, no links.
+**System rules:** rank exactly 3 films, using only ids from `candidates`; for each film write one reason for every member; begin with "You" or "Your"; do not repeat the film's title; at most 140 characters; use only facts present in the input; no names, no links.
 
 **Output** via `response_format: { type: "json_schema", json_schema: { name: "ranking", strict: true, schema } }` (strict mode confirmed for this model, see [TRD §10](TRD.md#10-verified-platform-facts); every property is required and every object has `additionalProperties: false`):
 
@@ -295,7 +295,7 @@ Candidates are capped at 10; favourites at 3 per member. This is the least data 
 | Ranking length | exactly 3 |
 | Ids | each in `C`, all distinct |
 | Reasons | exactly one per settled member per film; `member` matches `/^P[1-8]$/` and exists |
-| Text | 1 to 140 chars after trim; no control characters; no `http`, `www.` or `://` |
+| Text | 1 to 140 chars after trim; no control characters; no `http`, `www.`, `://` or `_` (a leaked setting name) |
 
 Fail → one retry with the validation error appended, inside the shared deadline. A second failure, a 429, a timeout or any thrown error → fallback. Film facts shown in the UI (title, year, poster, runtime, services) always come from MOTN data held by the room, never from the model's output.
 
