@@ -3,4 +3,5 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [cloudflareTest({ wrangler: { configPath: "./wrangler.jsonc" } })],
+  test: { testTimeout: 20_000 }, // the first test pays for the Worker runtime's cold start
 });
